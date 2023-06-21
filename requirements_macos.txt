@@ -28,5 +28,7 @@ huggingface-hub==0.13.0; sys_platform == 'darwin'
 tensorflow==2.10.1; sys_platform != 'darwin'
 # For locon support
 lycoris_lora==0.1.2
+clip @ git+https://github.com/openai/CLIP.git
+
 # for kohya_ss library
 .

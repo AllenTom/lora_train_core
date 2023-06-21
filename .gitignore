@@ -143,3 +143,5 @@ gui-user.ps1
 
 /extra
 /.idea
+
+assets/*.pt*

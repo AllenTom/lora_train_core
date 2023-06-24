@@ -34,6 +34,7 @@ from library.custom_train_functions import (
     apply_noise_offset,
     scale_v_prediction_loss_like_noise_prediction,
 )
+from modules import client
 
 
 # TODO 他のスクリプトと共通化する
@@ -77,6 +78,7 @@ def generate_step_logs(
 
 
 def train(args):
+    train_status = client.TrainStatus()
     session_id = random.randint(0, 2**32)
     training_started_at = time.time()
     train_util.verify_training_args(args)
@@ -589,6 +591,7 @@ def train(args):
         unwrapped_nw.save_weights(ckpt_file, save_dtype, minimum_metadata if args.no_metadata else metadata)
         if args.huggingface_repo_id is not None:
             huggingface_util.upload(args, ckpt_file, "/" + ckpt_name, force_sync_upload=force_sync_upload)
+        client.send_model_save_callback(ckpt_file)
 
     def remove_model(old_ckpt_name):
         old_ckpt_file = os.path.join(args.output_dir, old_ckpt_name)
@@ -608,6 +611,7 @@ def train(args):
 
         for step, batch in enumerate(train_dataloader):
             current_step.value = global_step
+
             with accelerator.accumulate(network):
                 on_step_start(text_encoder, unet)
 
@@ -731,12 +735,25 @@ def train(args):
                 logs = generate_step_logs(args, current_loss, avr_loss, lr_scheduler, keys_scaled, mean_norm, maximum_norm)
                 accelerator.log(logs, step=global_step)
 
+            train_status.step = global_step
+            train_status.epoch = epoch + 1
+            train_status.total_step = args.max_train_steps
+            train_status.current_loss = current_loss
+            train_status.average_loss = avr_loss
+            train_status.total_epoch = num_train_epochs
+
             if global_step >= args.max_train_steps:
                 break
+
+
+
+            client.send_train_status(train_status)
 
         if args.logging_dir is not None:
             logs = {"loss/epoch": loss_total / len(loss_list)}
             accelerator.log(logs, step=epoch + 1)
+
+
 
         accelerator.wait_for_everyone()
 

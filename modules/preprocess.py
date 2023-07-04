@@ -16,6 +16,7 @@ class PreprocessParams:
     process_caption = False
     process_caption_deepbooru = False
     preprocess_txt_action = None
+    outputFiles = []
 
 
 def center_crop(image: Image, w: int, h: int):
@@ -72,6 +73,7 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
             file.write(caption)
 
     params.subindex += 1
+    params.outputFiles.append(f"{basename}.png")
 
 
 def save_pic(image, index, params, existing_caption=None):
@@ -242,3 +244,4 @@ def preprocess_work(
             img = images.resize_image(1, img, width, height)
             save_pic(img, index, params, existing_caption=existing_caption)
         index += 1
+    output.printJsonOutput("Done", vars=params.outputFiles, event="preprocess_done")

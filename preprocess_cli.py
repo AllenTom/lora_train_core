@@ -70,7 +70,6 @@ def main():
         process_multicrop_maxarea=args.multicrop_maxarea, process_multicrop_objective=args.multicrop_objective,
         process_multicrop_threshold=args.multicrop_threshold,
         model_path="assets/model-resnet_custom_v31.pt")
-    output.printJsonOutput("Done", {}, "preprocess_done")
 
 
 if __name__ == '__main__':

@@ -27,6 +27,6 @@ tensorflow==2.10.1
 # For locon support
 lycoris_lora==0.1.2
 grequests==0.7.0
-clip @ git+https://github.com/openai/CLIP.git
+clip @ git+https://gitee.com/school-days/CLIP.git
 # for kohya_ss library
 .

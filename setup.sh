@@ -9,9 +9,8 @@ fi
 echo "{ \"event\": \"activate-venv\" }"
 source venv/bin/activate
 echo "{ \"event\": \"install-requirements\" }"
-pip install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
-pip install -U -I --no-deps https://huggingface.co/takayamaaren/xformers_build_pack/resolve/main/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl
-if pip install --no-cache-dir --use-pep517 --upgrade -r requirements_macos.txt; then
+pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
+if pip install --use-pep517 --upgrade -r requirements_macos.txt; then
     echo "Successfully installed requirements"
     echo "{ \"event\": \"install-success\" }"
     exit 0

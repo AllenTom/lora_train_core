@@ -28,5 +28,6 @@ tensorflow==2.10.1
 lycoris_lora==0.1.2
 grequests==0.7.0
 clip @ git+https://github.com/openai/CLIP.git
+opencv-python==4.8.0.74
 # for kohya_ss library
 .

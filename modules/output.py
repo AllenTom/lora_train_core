@@ -1,7 +1,7 @@
 import json
 
 jsonOut = False
-def printJsonOutput(message, vars, event, ):
+def printJsonOutput(message, vars, event,newline=False ):
     if not jsonOut:
         return
     out = {
@@ -9,4 +9,8 @@ def printJsonOutput(message, vars, event, ):
         "vars": vars,
         "event": event
     }
-    print(json.dumps(out))
+    if newline:
+        print("\n"+json.dumps(out))
+    else:
+        print(json.dumps(out))
+

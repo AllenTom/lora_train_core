@@ -23,11 +23,15 @@ vit_model_hash = "096db1af569b284eb76b3881534822d9"
 med_config = os.path.join("./finetune/blip", "med_config.json")
 interrogate_clip_dict_limit = 1500
 interrogate_clip_num_beams = 1
-interrogate_clip_min_length =  24
+interrogate_clip_min_length = 24
 interrogate_clip_max_length = 48
 lowvram = False
 medvram = False
+use_cn = False
 interrogate_return_ranks = False
+callbackServer = "http://localhost:6745"
+
+
 def autocast(disable=False):
     if disable:
         return contextlib.nullcontext()
@@ -36,3 +40,10 @@ def autocast(disable=False):
         return contextlib.nullcontext()
 
     return torch.autocast("cuda")
+
+
+def get_deep_booru_model_url():
+    if use_cn:
+        return 'https://huggingface.co/casual02/model-resnet_custom_v3/resolve/main/model-resnet_custom_v3.pt'
+    else:
+        return 'https://github.com/AUTOMATIC1111/TorchDeepDanbooru/releases/download/v1/model-resnet_custom_v3.pt'

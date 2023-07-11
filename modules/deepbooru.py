@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from modules import deepbooru_model, share, images, modelloader
+from modules import deepbooru_model, share, images, modelloader, output
 
 re_special = re.compile(r'([\\()])')
 interrogate_deepbooru_score_threshold = 0.7
@@ -26,9 +26,19 @@ class DeepDanbooru:
             return
         exists = os.path.exists(share.danbooru_model_path)
         if not exists:
+            output.printJsonOutput(
+                message=f"Downloading DeepDanbooru model...",
+                event="start_download_model",
+                vars={}
+            )
             modelloader.load_file(
                 url='https://github.com/AUTOMATIC1111/TorchDeepDanbooru/releases/download/v1/model-resnet_custom_v3.pt',
                 dst=share.danbooru_model_path,
+            )
+            output.printJsonOutput(
+                message=f"Downloaded DeepDanbooru model.",
+                event="end_download_model",
+                vars={}
             )
             # files = modelloader.load_models(
             #     model_path=os.path.join(paths.models_path, "torch_deepdanbooru"),

@@ -8,6 +8,8 @@ from urllib.request import urlopen, Request
 import torch
 from tqdm import tqdm
 
+from modules import output, share
+
 
 def load_file(url, dst, hash_prefix=None, progress=True):
     if os.path.exists(dst):
@@ -53,6 +55,7 @@ def download_url_to_file(url, dst, hash_prefix=None, progress=True):
     try:
         if hash_prefix is not None:
             sha256 = hashlib.sha256()
+        cur = 0
         with tqdm(total=file_size, disable=not progress,
                   unit='B', unit_scale=True, unit_divisor=1024) as pbar:
             while True:
@@ -63,6 +66,18 @@ def download_url_to_file(url, dst, hash_prefix=None, progress=True):
                 if hash_prefix is not None:
                     sha256.update(buffer)
                 pbar.update(len(buffer))
+                if (pbar.n / pbar.total) * 100 > cur + 1:
+                    output.printJsonOutput(
+                        message=f"[{round((pbar.n / pbar.total) * 100)}%]Downloading: " + str(pbar.n) + "/" + str(pbar.total) + " bytes",
+                        vars={
+                            "n": pbar.n,
+                            "total": pbar.total,
+                            "progress": round((pbar.n / pbar.total) * 100),
+                        },
+                        event="download_model_progress",
+                        newline=True
+                    )
+                    cur = (pbar.n / pbar.total) * 100
 
         f.close()
         if hash_prefix is not None:

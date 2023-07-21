@@ -125,7 +125,10 @@ def preprocess_work(
         process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False,
         process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None,
         process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None,
-        process_multicrop_threshold=None, model_path="../assets/model-resnet_custom_v31.pt"):
+        process_multicrop_threshold=None, model_path="../assets/model-resnet_custom_v31.pt",
+        process_folders=None,
+        process_images=None,
+):
     # loading model
     output.printJsonOutput(
         message="Start process",
@@ -138,16 +141,24 @@ def preprocess_work(
         deepbooru.model.load()
     width = process_width
     height = process_height
-    src = os.path.abspath(process_src)
     dst = os.path.abspath(process_dst)
     split_threshold = max(0.0, min(1.0, split_threshold))
     overlap_ratio = max(0.0, min(0.9, overlap_ratio))
 
-    assert src != dst, 'same directory specified as source and destination'
-
     os.makedirs(dst, exist_ok=True)
+    folders = []
+    if (process_src):
+        src = os.path.abspath(process_src)
+        assert src != dst, 'same directory specified as source and destination'
+        folders.append(src)
 
-    files = listfiles(src)
+    if process_folders:
+        folders.append(process_folders.map(lambda x: os.path.abspath(x)))
+    files = []
+    for folder in folders:
+        files.append(listfiles(folder))
+    if (process_images):
+        files.extend(map(lambda x: os.path.abspath(x), process_images))
 
     # shared.state.job = "preprocess"
     # shared.state.textinfo = "Preprocessing..."
@@ -172,7 +183,7 @@ def preprocess_work(
             event="process_progress",
         )
         params.subindex = 0
-        filename = os.path.join(src, imagefile)
+        filename = imagefile
         try:
             img = Image.open(filename).convert("RGB")
         except Exception:

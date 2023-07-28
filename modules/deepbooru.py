@@ -68,8 +68,7 @@ class DeepDanbooru:
 
         return res
 
-    def tag_multi(self, pil_image, force_disable_ranks=False):
-        threshold = interrogate_deepbooru_score_threshold
+    def tag_multi(self, pil_image, force_disable_ranks=False,threshold=interrogate_deepbooru_score_threshold):
         use_spaces = deepbooru_use_spaces
         use_escape = deepbooru_escape
         alpha_sort = deepbooru_sort_alpha

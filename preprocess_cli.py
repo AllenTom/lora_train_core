@@ -52,9 +52,11 @@ def main():
     parser.add_argument('--json_out', action='store_true', default=None)
     parser.add_argument('--json_input', action='store', default=None, type=str)
     parser.add_argument("--json_input_base64", action='store', default=None, type=str)
+    parser.add_argument("--output_detail", action='store_true')
     # Parse the arguments
     args = parser.parse_args()
     output.jsonOut = args.json_out
+    output.detail_output = args.output_detail
 
     input_json = args.json_input
     if args.json_input_base64 is not None:

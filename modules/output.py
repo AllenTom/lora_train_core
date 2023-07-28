@@ -1,6 +1,8 @@
 import json
 
 jsonOut = False
+detail_output = False
+
 def printJsonOutput(message, vars, event,newline=False ):
     if not jsonOut:
         return

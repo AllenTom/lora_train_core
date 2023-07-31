@@ -58,7 +58,8 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
     filename_part = os.path.basename(filename_part)
 
     basename = f"{index:05}-{params.subindex}-{filename_part}"
-    image.save(os.path.join(params.dstdir, f"{basename}.png"))
+    image_path = os.path.join(params.dstdir, f"{basename}.png")
+    image.save(image_path)
 
     if params.preprocess_txt_action == 'prepend' and existing_caption:
         caption = existing_caption + ' ' + caption
@@ -76,8 +77,9 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
         params.subindex += 1
         params.outputFiles.append(f"{basename}.png")
         params.outputDetail.append({
-            "dest": output_path,
+            "dest": image_path,
             "src": params.src,
+            "name": f"{basename}.png",
         })
 
 

@@ -1,7 +1,10 @@
 import os.path
+import re
 import shutil
 from abc import abstractmethod
 import hashlib
+
+import pkg_resources
 
 from modules import share
 
@@ -20,7 +23,52 @@ class CheckRule:
     def get_message_level(self) -> int:
         pass
 
+def check_dependencies(dependencies):
+    missing_deps = []
+    for dep in dependencies:
+        regex = r"^(\w+)==(\d+\.\d+\.\d+)$"
+        match = re.match(regex, dep)
+        if match:
+            package_name = match.group(1)
+            version = match.group(2)
+            print("Package name:", package_name)
+            print("Version:", version)
+            try:
+                dist = pkg_resources.get_distribution(package_name)
+                if (dist.version != version):
+                    print("Version mismatch:", dist.version, "!=", version)
+                    missing_deps.append(package_name)
 
+            except Exception:
+                print("Package not found:", package_name)
+                missing_deps.append(package_name)
+
+    return missing_deps
+class DepRule(CheckRule):
+    def __init__(self):
+        self.message = ""
+        self.level = 2
+
+    def check(self) -> bool:
+        with open('requirements.txt', 'r') as file:
+            requirements = file.read().splitlines()
+
+        # Check if dependencies are installed
+        missing_dependencies = check_dependencies(requirements)
+        if missing_dependencies:
+            print("The following dependencies are missing:")
+            for dep in missing_dependencies:
+                print(dep)
+        else:
+            print("All dependencies are installed.")
+        self.message = "缺少依赖项: " + ",".join(missing_dependencies)
+        return len(missing_dependencies) == 0
+
+    def get_message(self) -> str:
+        return self.message
+
+    def get_message_level(self) -> int:
+        return -1
 class ViTCheckRule(CheckRule):
 
     def __init__(self):
@@ -77,7 +125,7 @@ class BLIPCheckRule(CheckRule):
         return 1
 
 
-rules = [ViTCheckRule(), BLIPCheckRule()]
+rules = [ViTCheckRule(), BLIPCheckRule(),DepRule()]
 
 
 def check():

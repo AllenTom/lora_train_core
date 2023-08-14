@@ -24,6 +24,9 @@ def main():
     parser.add_argument('--input_base64', action='store')
     parser.add_argument('--dir', action='store')
     parser.add_argument('--threshold', action='store', default=float(0.7), type=float)
+    parser.add_argument('--with_rank', action='store_true')
+    parser.add_argument('--per', action='store_true')
+    parser.add_argument('--no_result', action='store_false')
     # Parse the arguments
     args = parser.parse_args()
     dbr = deepbooru.DeepDanbooru()
@@ -48,14 +51,20 @@ def main():
 
     for src in srcs:
         testImage = PIL.Image.open(src)
-        tag_str = dbr.tag_multi(testImage,threshold=args.threshold)
+        tag_str = dbr.tag_multi(testImage,threshold=args.threshold,include_ranks=args.with_rank)
         tags = tag_str.split(",")
-        result.append({
+        item = {
             "filename": os.path.basename(src),
-            "tags": [x.strip() for x in tags]
-        })
-
-    print(json.dumps(result))
+        }
+        if args.with_rank:
+            item["tags"] = [{"tag": x.strip().split(":")[0], "rank": float(x.strip().split(":")[1])} for x in tags]
+        else:
+            item["tags"] = [x.strip() for x in tags]
+        result.append(item)
+        if args.per:
+            print(json.dumps(item))
+    if args.no_result:
+        print(json.dumps(result))
 
 if __name__ == '__main__':
     main()

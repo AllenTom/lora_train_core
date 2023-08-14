@@ -1,10 +1,8 @@
-import contextlib
 import os
 import re
 
 import numpy as np
 import torch
-from PIL import Image
 
 from modules import deepbooru_model, share, images, modelloader, output
 
@@ -68,11 +66,10 @@ class DeepDanbooru:
 
         return res
 
-    def tag_multi(self, pil_image, force_disable_ranks=False,threshold=interrogate_deepbooru_score_threshold):
+    def tag_multi(self, pil_image, force_disable_ranks=False,threshold=interrogate_deepbooru_score_threshold,include_ranks=False):
         use_spaces = deepbooru_use_spaces
         use_escape = deepbooru_escape
         alpha_sort = deepbooru_sort_alpha
-        include_ranks = interrogate_return_ranks and not force_disable_ranks
 
         pic = images.resize_image(2, pil_image.convert("RGB"), 512, 512)
         a = np.expand_dims(np.array(pic, dtype=np.float32), 0) / 255
@@ -109,7 +106,7 @@ class DeepDanbooru:
             if use_escape:
                 tag_outformat = re.sub(re_special, r'\\\1', tag_outformat)
             if include_ranks:
-                tag_outformat = f"({tag_outformat}:{probability:.3f})"
+                tag_outformat = f"{tag_outformat}:{probability:.3f}"
 
             res.append(tag_outformat)
 

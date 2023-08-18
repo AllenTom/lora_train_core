@@ -1,3 +1,6 @@
+import sys
+
+sys.path.append(".\\repositories\\BLIP")
 import argparse
 import base64
 import json
@@ -5,7 +8,7 @@ import sys
 
 from modules import preprocess, output, share
 
-sys.path.append("./finetune")
+
 
 
 # def preprocess_work(

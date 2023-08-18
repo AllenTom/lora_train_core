@@ -66,7 +66,8 @@ class DeepDanbooru:
 
         return res
 
-    def tag_multi(self, pil_image, force_disable_ranks=False,threshold=interrogate_deepbooru_score_threshold,include_ranks=False):
+    def tag_multi(self, pil_image, force_disable_ranks=False, threshold=interrogate_deepbooru_score_threshold,
+                  include_ranks=False):
         use_spaces = deepbooru_use_spaces
         use_escape = deepbooru_escape
         alpha_sort = deepbooru_sort_alpha
@@ -107,9 +108,15 @@ class DeepDanbooru:
                 tag_outformat = re.sub(re_special, r'\\\1', tag_outformat)
             if include_ranks:
                 tag_outformat = f"{tag_outformat}:{probability:.3f}"
-
-            res.append(tag_outformat)
-
+            if not include_ranks:
+                res.append(tag_outformat)
+            else:
+                res.append({
+                    "tag": tag,
+                    "rank": float(f"{probability:.3f}")
+                })
+        if include_ranks:
+            return res
         return ", ".join(res)
 
 

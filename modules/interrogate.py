@@ -93,13 +93,9 @@ class InterrogateModels:
         sys.modules["fairscale.nn.checkpoint.checkpoint_activations"] = FakeFairscale
 
     def load_blip_model(self):
-        modelloader.load_file(
-            url='https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_caption_capfilt_large.pth',
-            dst=share.blip_model_path,
-        )
         self.create_fake_fairscale()
-        import finetune.blip.blip
-        blip_model = finetune.blip.blip.blip_decoder(pretrained=share.blip_model_path,
+        import models.blip
+        blip_model = models.blip.blip_decoder(pretrained=share.blip_model_path,
                                               image_size=blip_image_eval_size, vit='base',
                                               med_config=share.med_config)
         blip_model.eval()
@@ -202,7 +198,10 @@ class InterrogateModels:
             # devices.torch_gc()
 
             res = caption
-
+            result = [{
+                "tag": caption,
+                "rank": 1,
+            }]
             clip_image = self.clip_preprocess(pil_image).unsqueeze(0).type(self.dtype).to(share.device_interrogate)
 
             with torch.no_grad(), share.autocast():
@@ -213,10 +212,14 @@ class InterrogateModels:
                 for cat in self.categories():
                     matches = self.rank(image_features, cat.items, top_count=cat.topn)
                     for match, score in matches:
-                        if share.interrogate_return_ranks:
-                            res += f", ({match}:{score / 100:.3f})"
-                        else:
-                            res += f", {match}"
+                        result.append({
+                            "tag": match,
+                            "rank": score
+                        })
+                        # if share.interrogate_return_ranks:
+                        #     res += f", ({match}:{score / 100:.3f})"
+                        # else:
+                        #     res += f", {match}"
 
         except Exception:
             print("Error interrogating", file=sys.stderr)
@@ -226,4 +229,4 @@ class InterrogateModels:
         self.unload()
         # shared.state.end()
 
-        return res
+        return result

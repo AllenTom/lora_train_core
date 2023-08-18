@@ -5,10 +5,10 @@ import torch
 
 from modules import interrogate
 
-device = torch.device('cpu')
-devCPU = cpu = torch.device("cpu")
-dtype = torch.float
-device_interrogate = torch.device("cpu")
+device = torch.device('cuda')
+devCPU = cpu = torch.device("cuda")
+dtype = torch.float16
+device_interrogate = torch.device("cuda")
 precision = "autocast"  # autocast or full
 no_half = False
 interrogate_keep_models_in_memory = False
@@ -28,7 +28,7 @@ interrogate_clip_max_length = 48
 lowvram = False
 medvram = False
 use_cn = False
-interrogate_return_ranks = False
+interrogate_return_ranks = True
 callbackServer = "http://localhost:6745"
 
 

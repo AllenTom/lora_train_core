@@ -52,12 +52,15 @@ def main():
     for src in srcs:
         testImage = PIL.Image.open(src)
         tag_str = dbr.tag_multi(testImage,threshold=args.threshold,include_ranks=args.with_rank)
-        tags = tag_str.split(",")
+        if not args.with_rank:
+            tags = tag_str.split(",")
+        else:
+            tags = tag_str
         item = {
             "filename": os.path.basename(src),
         }
         if args.with_rank:
-            item["tags"] = [{"tag": x.strip().split(":")[0], "rank": float(x.strip().split(":")[1])} for x in tags]
+            item["tags"] = tags
         else:
             item["tags"] = [x.strip() for x in tags]
         result.append(item)
@@ -67,4 +70,9 @@ def main():
         print(json.dumps(result))
 
 if __name__ == '__main__':
-    main()
+    try :
+        main()
+    except Exception as e:
+        print(json.dumps({
+            "err": str(e)
+        }))

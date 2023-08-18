@@ -163,7 +163,10 @@ def preprocess_work(
         folders.append(process_folders.map(lambda x: os.path.abspath(x)))
     files = []
     for folder in folders:
-        files.append(listfiles(folder))
+        for folderFile in listfiles(folder):
+            files.append(os.path.join(folder, folderFile))
+
+        # files.append(map(lambda x: os.path.join(folder, x), listfiles(folder)))
     if (process_images):
         files.extend(map(lambda x: os.path.abspath(x), process_images))
 

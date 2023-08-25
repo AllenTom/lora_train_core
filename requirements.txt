@@ -29,5 +29,6 @@ lycoris_lora==0.1.2
 grequests==0.7.0
 clip @ git+https://github.com/openai/CLIP.git
 opencv-python==4.7.0.68
+websockets==11.0.3
 # for kohya_ss library
 .

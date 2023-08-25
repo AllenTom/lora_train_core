@@ -1,11 +1,25 @@
 import math
 import os
+from typing import List, Optional
 
 from PIL import Image, ImageOps
+from fastapi import UploadFile
+from pydantic import Field, BaseModel
 
 from modules import autocrop, images, deepbooru, output, share
 
 model = deepbooru.DeepDanbooru()
+
+
+class PreprocessImageFile:
+    def __init__(self, filename: str, img: Image, raw):
+        self.filename = filename
+        self.img = img
+        self.raw = raw
+
+    @staticmethod
+    def from_upload_file(file: UploadFile):
+        return PreprocessImageFile(file.filename, Image.open(file.file).convert("RGB"),raw=file)
 
 
 class PreprocessParams:
@@ -119,14 +133,14 @@ def listfiles(dirname):
 
 
 def preprocess_work(
-        process_src,
-        process_dst,
-        process_width,
-        process_height,
-        preprocess_txt_action,
-        process_flip,
-        process_split,
-        process_caption,
+        process_src=None,
+        process_dst=None,
+        process_width=512,
+        process_height=512,
+        preprocess_txt_action=None,
+        process_flip=False,
+        process_split=False,
+        process_caption=False,
         process_caption_deepbooru=False,
         split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
         process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False,
@@ -135,6 +149,7 @@ def preprocess_work(
         process_multicrop_threshold=None, model_path="../assets/model-resnet_custom_v31.pt",
         process_folders=None,
         process_images=None,
+        input_images: Optional[List[PreprocessImageFile]] = None
 ):
     # loading model
     output.printJsonOutput(
@@ -148,28 +163,30 @@ def preprocess_work(
         deepbooru.model.load()
     width = process_width
     height = process_height
+    files = []
     dst = os.path.abspath(process_dst)
     split_threshold = max(0.0, min(1.0, split_threshold))
     overlap_ratio = max(0.0, min(0.9, overlap_ratio))
 
     os.makedirs(dst, exist_ok=True)
-    folders = []
-    if (process_src):
-        src = os.path.abspath(process_src)
-        assert src != dst, 'same directory specified as source and destination'
-        folders.append(src)
+    if input_images is None:
+        folders = []
+        if process_src:
+            src = os.path.abspath(process_src)
+            assert src != dst, 'same directory specified as source and destination'
+            folders.append(src)
 
-    if process_folders:
-        folders.append(process_folders.map(lambda x: os.path.abspath(x)))
-    files = []
-    for folder in folders:
-        for folderFile in listfiles(folder):
-            files.append(os.path.join(folder, folderFile))
+        if process_folders:
+            folders.append(process_folders.map(lambda x: os.path.abspath(x)))
+        for folder in folders:
+            for folderFile in listfiles(folder):
+                files.append(os.path.join(folder, folderFile))
 
-        # files.append(map(lambda x: os.path.join(folder, x), listfiles(folder)))
-    if (process_images):
-        files.extend(map(lambda x: os.path.abspath(x), process_images))
-
+            # files.append(map(lambda x: os.path.join(folder, x), listfiles(folder)))
+        if process_images:
+            files.extend(map(lambda x: os.path.abspath(x), process_images))
+    else:
+        files = input_images
     # shared.state.job = "preprocess"
     # shared.state.textinfo = "Preprocessing..."
     # shared.state.job_count = len(files)
@@ -194,10 +211,15 @@ def preprocess_work(
         )
         params.subindex = 0
         filename = imagefile
-        try:
-            img = Image.open(filename).convert("RGB")
-        except Exception:
-            continue
+        img = None
+        if type(imagefile) is PreprocessImageFile:
+            img = imagefile.img
+            filename = imagefile.filename
+        else:
+            try:
+                img = Image.open(filename).convert("RGB")
+            except Exception:
+                continue
 
         # description = f"Preprocessing [Image {index}/{len(files)}]"
         # pbar.set_description(description)
@@ -269,3 +291,4 @@ def preprocess_work(
         output.printJsonOutput("Done", vars=params.outputDetail, event="preprocess_done")
     else:
         output.printJsonOutput("Done", vars=params.outputFiles, event="preprocess_done")
+    return params

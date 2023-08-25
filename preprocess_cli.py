@@ -9,23 +9,6 @@ import sys
 from modules import preprocess, output, share
 
 
-
-
-# def preprocess_work(
-#         process_src,
-#         process_dst,
-#         process_width,
-#         process_height,
-#         preprocess_txt_action,
-#         process_flip,
-#         process_split,
-#         process_caption,
-#         process_caption_deepbooru=False,
-#         split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
-#         process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False,
-#         process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None,
-#         process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None,
-#         process_multicrop_threshold=None, model_path="../assets/model-resnet_custom_v31.pt")
 def main():
     parser = argparse.ArgumentParser()
     # Add a flag argument
@@ -97,7 +80,6 @@ def main():
         process_folders=input_folders,
         process_images=input_files
     )
-
 
 if __name__ == '__main__':
     main()

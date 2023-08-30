@@ -25,7 +25,7 @@ timm==0.6.12
 huggingface-hub==0.12.0
 tensorflow==2.10.1
 # For locon support
-lycoris_lora==0.1.2
+lycoris_lora==1.8.3
 grequests==0.7.0
 clip @ git+https://gitee.com/school-days/CLIP.git
 # for kohya_ss library

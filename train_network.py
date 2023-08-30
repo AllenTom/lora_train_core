@@ -4,8 +4,10 @@ import gc
 import math
 import os
 import random
+import sys
 import time
 import json
+import traceback
 from multiprocessing.dummy import Value
 
 import toml
@@ -213,7 +215,6 @@ def train(args):
         for net_arg in args.network_args:
             key, value = net_arg.split("=")
             net_kwargs[key] = value
-
     # if a new network is added in future, add if ~ then blocks for each network (;'∀')
     if args.dim_from_weights:
         network, _ = network_module.create_network_from_weights(1, args.network_weights, vae, text_encoder, unet,
@@ -912,9 +913,14 @@ def setup_parser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
-    parser = setup_parser()
-
-    args = parser.parse_args()
-    args = train_util.read_config_from_file(args, parser)
-
-    train(args)
+    try:
+        parser = setup_parser()
+        args = parser.parse_args()
+        args = train_util.read_config_from_file(args, parser)
+        if (args.network_args is not None) and (len(args.network_args) > 0) and (args.network_args[0].count('=') > 1):
+            args.network_args = args.network_args[0].split(" ")
+        train(args)
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        input("Press Enter to exit...")

@@ -27,7 +27,7 @@ huggingface-hub==0.12.0; sys_platform != 'darwin'
 huggingface-hub==0.13.0; sys_platform == 'darwin'
 tensorflow==2.10.1; sys_platform != 'darwin'
 # For locon support
-lycoris_lora==0.1.2
+lycoris_lora==1.8.3
 clip @ git+https://github.com/openai/CLIP.git
 grequests==0.7.0
 opencv-python==4.7.0.68

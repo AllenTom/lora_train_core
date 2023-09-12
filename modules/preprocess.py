@@ -89,12 +89,12 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
         with open(output_path, "w", encoding="utf8") as file:
             file.write(caption)
         params.subindex += 1
-        params.outputFiles.append(f"{basename}.png")
-        params.outputDetail.append({
-            "dest": image_path,
-            "src": params.src,
-            "name": f"{basename}.png",
-        })
+    params.outputFiles.append(f"{basename}.png")
+    params.outputDetail.append({
+        "dest": image_path,
+        "src": params.src,
+        "name": f"{basename}.png",
+    })
 
 
 def save_pic(image, index, params, existing_caption=None):

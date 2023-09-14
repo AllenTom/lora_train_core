@@ -133,6 +133,7 @@ class WaifuDiffusion:
     def tag_multi(
             self,
             image: PIL.Image.Image,
+            include_ranks: bool = False,
     ):
         tag_names, rating_indexes, general_indexes, character_indexes = load_labels()
         result = self.predict(
@@ -144,6 +145,8 @@ class WaifuDiffusion:
             general_indexes=general_indexes,
             character_indexes=character_indexes
         )
+        if include_ranks:
+            return result[4]
         return result[1]
 
     def predict(

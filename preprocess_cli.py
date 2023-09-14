@@ -21,6 +21,10 @@ def main():
     parser.add_argument('--split', action='store_true')
     parser.add_argument('--caption', action='store_true')
     parser.add_argument('--caption_deepbooru', action='store_true')
+    parser.add_argument('--caption_wd', action='store_true')
+    parser.add_argument('--wd_general_threshold', action='store', default=0.5, type=float)
+    parser.add_argument('--wd_character_threshold', action='store', default=0.5, type=float)
+    parser.add_argument('--wd_model_name', action='store', default='MOAT', type=str)
     parser.add_argument('--split_threshold', action='store', default=0.5, type=float)
     parser.add_argument('--overlap_ratio', action='store', default=0.2, type=float)
     parser.add_argument('--focal_crop', action='store_true')
@@ -68,6 +72,10 @@ def main():
         process_split=args.split,
         process_caption=args.caption,
         process_caption_deepbooru=args.caption_deepbooru,
+        process_caption_wd=args.caption_wd,
+        wd_general_threshold=args.wd_general_threshold,
+        wd_character_threshold=args.wd_character_threshold,
+        wd_model_name=args.wd_model_name,
         split_threshold=args.split_threshold, overlap_ratio=args.overlap_ratio, process_focal_crop=args.focal_crop,
         process_focal_crop_face_weight=args.focal_crop_face_weight,
         process_focal_crop_entropy_weight=args.focal_crop_entropy_weight,
@@ -80,6 +88,7 @@ def main():
         process_folders=input_folders,
         process_images=input_files
     )
+
 
 if __name__ == '__main__':
     main()

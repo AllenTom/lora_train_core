@@ -6,7 +6,7 @@ from PIL import Image, ImageOps
 from fastapi import UploadFile
 from pydantic import Field, BaseModel
 
-from modules import autocrop, images, deepbooru, output, share
+from modules import autocrop, images, deepbooru, output, share, wd14
 
 model = deepbooru.DeepDanbooru()
 
@@ -19,7 +19,7 @@ class PreprocessImageFile:
 
     @staticmethod
     def from_upload_file(file: UploadFile):
-        return PreprocessImageFile(file.filename, Image.open(file.file).convert("RGB"),raw=file)
+        return PreprocessImageFile(file.filename, Image.open(file.file).convert("RGB"), raw=file)
 
 
 class PreprocessParams:
@@ -29,6 +29,7 @@ class PreprocessParams:
     flip = False
     process_caption = False
     process_caption_deepbooru = False
+    process_caption_wd = False
     preprocess_txt_action = None
     outputFiles = []
     outputDetail = []
@@ -66,7 +67,10 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
         if len(caption) > 0:
             caption += ", "
         caption += deepbooru.model.tag_multi(image)
-
+    if params.process_caption_wd:
+        if len(caption) > 0:
+            caption += ", "
+        caption += wd14.model.tag_multi(image)
     filename_part = params.src
     filename_part = os.path.splitext(filename_part)[0]
     filename_part = os.path.basename(filename_part)
@@ -142,6 +146,10 @@ def preprocess_work(
         process_split=False,
         process_caption=False,
         process_caption_deepbooru=False,
+        process_caption_wd=False,
+        wd_general_threshold=None,
+        wd_character_threshold=None,
+        wd_model_name=None,
         split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
         process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False,
         process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None,
@@ -157,10 +165,18 @@ def preprocess_work(
         event="preprocess_start",
         vars={}
     )
-    if (process_caption):
+    if process_caption:
         share.interrogator.load()
-    if (process_caption_deepbooru):
+    if process_caption_deepbooru:
         deepbooru.model.load()
+    if process_caption_wd:
+        wd14.model.load(
+            model_name=wd_model_name,
+        )
+        wd14.model.set_param(
+            general_threshold=wd_general_threshold,
+            character_threshold=wd_character_threshold,
+        )
     width = process_width
     height = process_height
     files = []
@@ -197,6 +213,7 @@ def preprocess_work(
     params.process_caption = process_caption
     params.process_caption_deepbooru = process_caption_deepbooru
     params.preprocess_txt_action = preprocess_txt_action
+    params.process_caption_wd = process_caption_wd
 
     # pbar = tqdm.tqdm(files)
     index = 0
@@ -254,7 +271,7 @@ def preprocess_work(
 
             dnn_model_path = None
             try:
-                dnn_model_path = autocrop.download_and_cache_models(os.path.join('./assets', "opencv"))
+                dnn_model_path = os.path.join('./assets', 'face_detection_yunet_2022mar.onnx')
             except Exception as e:
                 print(
                     "Unable to load face detection model for auto crop selection. Falling back to lower quality haar method.",

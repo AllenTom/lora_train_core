@@ -1,13 +1,24 @@
-import io
-import logging
 import os
 import threading
-from contextlib import redirect_stdout
+
+from pydantic import BaseModel, Field
 
 from library import train_util
-from server import project, paths
+from server import project, paths, sender, utils
 from train_network import setup_parser, train
-from modules import share
+
+class Task(BaseModel):
+    id: str = Field()
+    thread_inst: threading.Thread = Field()
+
+
+
+class TaskPool(BaseModel):
+    task_list = []
+
+    def add_task(self, task: Task):
+        self.task_list.append(task)
+
 
 out_text = ""
 default_train_param = {
@@ -53,7 +64,7 @@ def build_train_args(meta: project.ProjectMeta, config: project.TrainConfig):
         "output_dir": os.path.abspath(model_output_path),
         "output_name": config.model_name,
         "training_comment": config.model_name,
-        "train_data_dir": os.path.abspath(dataset_folder_path) + "123423dw",
+        "train_data_dir": os.path.abspath(dataset_folder_path),
         "pretrained_model_name_or_path": config.pretrained_model_name_or_path,
         "disable_callbacks": True
     }
@@ -70,12 +81,11 @@ def build_train_args(meta: project.ProjectMeta, config: project.TrainConfig):
 
 
 def train_func(args):
-    try :
+    try:
+        sender.send_message_to_clients("train start")
         train(args)
     except Exception as e:
         print(e)
-
-
 
 
 def train_project(id: str, config_id: str):

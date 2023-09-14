@@ -1,33 +1,27 @@
-import importlib
 import argparse
 import gc
+import importlib
+import json
 import math
 import os
 import random
-import sys
 import time
-import json
 import traceback
 from multiprocessing.dummy import Value
 
-import toml
-
-from tqdm import tqdm
 import torch
 from accelerate.utils import set_seed
 from diffusers import DDPMScheduler
+from tqdm import tqdm
 
-import library.train_util as train_util
-from library.train_util import (
-    DreamBoothDataset,
-)
 import library.config_util as config_util
+import library.custom_train_functions as custom_train_functions
+import library.huggingface_util as huggingface_util
+import library.train_util as train_util
 from library.config_util import (
     ConfigSanitizer,
     BlueprintGenerator,
 )
-import library.huggingface_util as huggingface_util
-import library.custom_train_functions as custom_train_functions
 from library.custom_train_functions import (
     apply_snr_weight,
     get_weighted_text_embeddings,
@@ -36,7 +30,11 @@ from library.custom_train_functions import (
     apply_noise_offset,
     scale_v_prediction_loss_like_noise_prediction,
 )
+from library.train_util import (
+    DreamBoothDataset,
+)
 from modules import client
+from server import sender
 
 
 # TODO 他のスクリプトと共通化する
@@ -765,6 +763,7 @@ def train(args):
 
             if global_step >= args.max_train_steps:
                 break
+            sender.send_message_to_clients(json.dumps(train_status.output()))
 
             if not args.disable_callbacks:
                 try:
@@ -910,7 +909,6 @@ def setup_parser() -> argparse.ArgumentParser:
         action="store_true",
     )
     return parser
-
 
 if __name__ == "__main__":
     try:

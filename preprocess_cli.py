@@ -43,6 +43,8 @@ def main():
     parser.add_argument('--json_input', action='store', default=None, type=str)
     parser.add_argument("--json_input_base64", action='store', default=None, type=str)
     parser.add_argument("--output_detail", action='store_true')
+    parser.add_argument("--anime_face", action='store_true')
+    parser.add_argument("--anime_face_ratio", action='store', default=1, type=float)
     # Parse the arguments
     args = parser.parse_args()
     output.jsonOut = args.json_out
@@ -86,7 +88,9 @@ def main():
         process_multicrop_threshold=args.multicrop_threshold,
         model_path="assets/model-resnet_custom_v31.pt",
         process_folders=input_folders,
-        process_images=input_files
+        process_images=input_files,
+        anime_face_detect=args.anime_face,
+        anime_face_detect_ratio=args.anime_face_ratio
     )
 
 

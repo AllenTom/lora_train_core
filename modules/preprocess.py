@@ -6,7 +6,7 @@ from PIL import Image, ImageOps
 from fastapi import UploadFile
 from pydantic import Field, BaseModel
 
-from modules import autocrop, images, deepbooru, output, share, wd14
+from modules import autocrop, images, deepbooru, output, share, wd14, anifacedec
 
 model = deepbooru.DeepDanbooru()
 
@@ -157,7 +157,9 @@ def preprocess_work(
         process_multicrop_threshold=None, model_path="../assets/model-resnet_custom_v31.pt",
         process_folders=None,
         process_images=None,
-        input_images: Optional[List[PreprocessImageFile]] = None
+        input_images: Optional[List[PreprocessImageFile]] = None,
+        anime_face_detect=False,
+        anime_face_detect_ratio=1.0,
 ):
     # loading model
     output.printJsonOutput(
@@ -216,6 +218,8 @@ def preprocess_work(
     params.process_caption_wd = process_caption_wd
 
     # pbar = tqdm.tqdm(files)
+    if anime_face_detect:
+        anifacedec.load_model()
     index = 0
     for imagefile in files:
         output.printJsonOutput(
@@ -237,6 +241,8 @@ def preprocess_work(
                 img = Image.open(filename).convert("RGB")
             except Exception:
                 continue
+        if anime_face_detect:
+            img = anifacedec.crop_image_with_face(img, anime_face_detect_ratio)
 
         # description = f"Preprocessing [Image {index}/{len(files)}]"
         # pbar.set_description(description)

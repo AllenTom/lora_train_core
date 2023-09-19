@@ -20,23 +20,12 @@ VIT_MODEL_REPO = "SmilingWolf/wd-v1-4-vit-tagger-v2"
 MODEL_FILENAME = "model.onnx"
 LABEL_FILENAME = "selected_tags.csv"
 
-local_repo_mapper = {
-    MOAT_MODEL_REPO: "./assets/wd-v1-4-moat-tagger-v2",
-    SWIN_MODEL_REPO: "./assets/wd-v1-4-swinv2-tagger-v2",
-    CONV_MODEL_REPO: "./assets/wd-v1-4-convnext-tagger-v2",
-    CONV2_MODEL_REPO: "./assets/wd-v1-4-convnextv2-tagger-v2",
-    VIT_MODEL_REPO: "./assets/wd-v1-4-vit-tagger-v2",
-}
-
 
 def load_labels() -> list[str]:
-    path = None
-    if os.path.exists('./assets/selected_tags.csv'):
-        path = './assets/selected_tags.csv'
-    if path is None:
-        path = huggingface_hub.hf_hub_download(
-            MOAT_MODEL_REPO, LABEL_FILENAME
-        )
+    path = huggingface_hub.hf_hub_download(
+        MOAT_MODEL_REPO, LABEL_FILENAME,
+        cache_dir='./hf_cache'
+    )
     df = pd.read_csv(path)
     tag_names = df["name"].tolist()
     rating_indexes = list(np.where(df["category"] == 9)[0])
@@ -46,15 +35,10 @@ def load_labels() -> list[str]:
 
 
 def load_model(model_repo: str, model_filename: str) -> rt.InferenceSession:
-    # path = huggingface_hub.hf_hub_download(
-    #     model_repo, model_filename
-    # )
-    path = None
-    if model_repo in local_repo_mapper:
-        if os.path.exists(local_repo_mapper[model_repo]):
-            path = os.path.join(local_repo_mapper[model_repo], model_filename)
-    if path is None:
-        path = os.path.join(model_repo, model_filename)
+    path = huggingface_hub.hf_hub_download(
+        model_repo, model_filename,
+        cache_dir='./hf_cache'
+    )
     model = rt.InferenceSession(path)
     return model
 
@@ -72,10 +56,6 @@ def change_model(model_name):
         model = load_model(VIT_MODEL_REPO, MODEL_FILENAME)
 
     return model
-
-
-
-
 
 
 def make_square(img, target_size):
@@ -102,6 +82,8 @@ def smart_resize(img, size):
     elif img.shape[0] < size:
         img = cv2.resize(img, (size, size), interpolation=cv2.INTER_CUBIC)
     return img
+
+
 class WaifuDiffusion:
     def __init__(self):
         self.model_name = None

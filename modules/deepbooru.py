@@ -1,6 +1,7 @@
 import os
 import re
 
+import huggingface_hub
 import numpy as np
 import torch
 
@@ -13,6 +14,8 @@ deepbooru_escape = True
 deepbooru_sort_alpha = True
 interrogate_return_ranks = False
 deepbooru_filter_tags = ""
+DEEP_DANBOORU_REPO = "takayamaaren/xformers_build_pack"
+DEEP_DANBOORU_FILE = "model-resnet_custom_v3.pt"
 
 
 class DeepDanbooru:
@@ -20,30 +23,10 @@ class DeepDanbooru:
         self.model = None
 
     def load(self):
-        if self.model is not None:
-            return
-        exists = os.path.exists(share.danbooru_model_path)
-        if not exists:
-            output.printJsonOutput(
-                message=f"Downloading DeepDanbooru model...",
-                event="start_download_model",
-                vars={}
-            )
-            modelloader.load_file(
-                url='https://github.com/AUTOMATIC1111/TorchDeepDanbooru/releases/download/v1/model-resnet_custom_v3.pt',
-                dst=share.danbooru_model_path,
-            )
-            output.printJsonOutput(
-                message=f"Downloaded DeepDanbooru model.",
-                event="end_download_model",
-                vars={}
-            )
-            # files = modelloader.load_models(
-            #     model_path=os.path.join(paths.models_path, "torch_deepdanbooru"),
-            #     model_url='https://github.com/AUTOMATIC1111/TorchDeepDanbooru/releases/download/v1/model-resnet_custom_v3.pt',
-            #     ext_filter=[".pt"],
-            #     download_name='model-resnet_custom_v31.pt',
-            # )
+        path = huggingface_hub.hf_hub_download(
+            DEEP_DANBOORU_REPO, DEEP_DANBOORU_FILE, cache_dir='./hf_cache'
+        )
+        share.danbooru_model_path = path
 
         self.model = deepbooru_model.DeepDanbooruModel()
         self.model.load_state_dict(torch.load(share.danbooru_model_path, map_location="cpu"))

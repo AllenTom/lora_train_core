@@ -4,9 +4,9 @@ from typing import List, Optional
 
 from PIL import Image, ImageOps
 from fastapi import UploadFile
-from pydantic import Field, BaseModel
 
-from modules import autocrop, images, deepbooru, output, share, wd14, anifacedec
+from modules import autocrop, images, deepbooru, output, share, wd14, anifacedec, yolomodeldec, anipersondec, \
+    anihalfpersondec
 
 model = deepbooru.DeepDanbooru()
 
@@ -160,6 +160,11 @@ def preprocess_work(
         input_images: Optional[List[PreprocessImageFile]] = None,
         anime_face_detect=False,
         anime_face_detect_ratio=1.0,
+        anime_person_detect=False,
+        anime_person_detect_ratio=0,
+        anime_half_body_detect=False,
+        anime_half_body_detect_ratio=0,
+        box_to_top=False,
 ):
     # loading model
     output.printJsonOutput(
@@ -220,6 +225,10 @@ def preprocess_work(
     # pbar = tqdm.tqdm(files)
     if anime_face_detect:
         anifacedec.load_model()
+    if anime_person_detect:
+        anipersondec.load_model()
+    if anime_half_body_detect:
+        anihalfpersondec.load_model()
     index = 0
     for imagefile in files:
         output.printJsonOutput(
@@ -242,8 +251,13 @@ def preprocess_work(
             except Exception:
                 continue
         if anime_face_detect:
-            img = anifacedec.crop_image_with_face(img, anime_face_detect_ratio)
-
+            img = yolomodeldec.crop_image_with_detection(img, anime_face_detect_ratio, anifacedec.model)
+        if anime_person_detect:
+            img = yolomodeldec.crop_image_with_detection(img, anime_person_detect_ratio, anipersondec.model,
+                                                         box_to_top=box_to_top)
+        if anime_half_body_detect:
+            img = yolomodeldec.crop_image_with_detection(img, anime_half_body_detect_ratio, anihalfpersondec.model,
+                                                         box_to_top=box_to_top)
         # description = f"Preprocessing [Image {index}/{len(files)}]"
         # pbar.set_description(description)
         # shared.state.textinfo = description

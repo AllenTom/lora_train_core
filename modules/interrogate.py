@@ -5,6 +5,7 @@ from collections import namedtuple
 from pathlib import Path
 import re
 
+import huggingface_hub
 import torch
 import torch.hub
 
@@ -12,6 +13,10 @@ from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
 from modules import share, lowvram, modelloader
+BLIP_REPO = "takayamaaren/xformers_build_pack"
+BLIP_FILE = "model_base_caption_capfilt_large.pth"
+CLIP_CAT_REPO = "takayamaaren/xformers_build_pack"
+CLIP_CAT_FOLDER = "clip_cat"
 
 blip_image_eval_size = 384
 clip_model_name = 'ViT-L/14'
@@ -95,6 +100,10 @@ class InterrogateModels:
     def load_blip_model(self):
         self.create_fake_fairscale()
         import models.blip
+        path = huggingface_hub.hf_hub_download(
+            BLIP_REPO,BLIP_FILE, cache_dir='./hf_cache',
+        )
+        share.blip_model_path = path
         blip_model = models.blip.blip_decoder(pretrained=share.blip_model_path,
                                               image_size=blip_image_eval_size, vit='base',
                                               med_config=share.med_config)

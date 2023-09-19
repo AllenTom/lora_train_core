@@ -45,6 +45,12 @@ def main():
     parser.add_argument("--output_detail", action='store_true')
     parser.add_argument("--anime_face", action='store_true')
     parser.add_argument("--anime_face_ratio", action='store', default=1, type=float)
+    parser.add_argument("--anime_person", action='store_true')
+    parser.add_argument("--anime_person_ratio", action='store', default=0, type=float)
+    parser.add_argument("--anime_half",action='store_true')
+    parser.add_argument("--anime_half_ratio", action='store', default=0, type=float)
+    parser.add_argument("--to_anime_body_top",action='store_true')
+
     # Parse the arguments
     args = parser.parse_args()
     output.jsonOut = args.json_out
@@ -90,7 +96,12 @@ def main():
         process_folders=input_folders,
         process_images=input_files,
         anime_face_detect=args.anime_face,
-        anime_face_detect_ratio=args.anime_face_ratio
+        anime_face_detect_ratio=args.anime_face_ratio,
+        anime_person_detect=args.anime_person,
+        anime_person_detect_ratio=args.anime_person_ratio,
+        anime_half_body_detect=args.anime_half,
+        anime_half_body_detect_ratio=args.anime_half_ratio,
+        box_to_top=args.to_anime_body_top
     )
 
 

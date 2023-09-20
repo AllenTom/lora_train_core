@@ -31,5 +31,7 @@ clip @ git+https://github.com/openai/CLIP.git
 opencv-python==4.7.0.68
 websockets==11.0.3
 onnxruntime
+ultralytics
+kornia
 # for kohya_ss library
 .

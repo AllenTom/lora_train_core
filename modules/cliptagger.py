@@ -1,20 +1,15 @@
 import os
+import re
 import sys
 import traceback
 from collections import namedtuple
 from pathlib import Path
-import re
 
-import huggingface_hub
 import torch
 import torch.hub
 
-from torchvision import transforms
-from torchvision.transforms.functional import InterpolationMode
+from modules import share, lowvram
 
-from modules import share, lowvram, modelloader
-BLIP_REPO = "takayamaaren/xformers_build_pack"
-BLIP_FILE = "model_base_caption_capfilt_large.pth"
 CLIP_CAT_REPO = "takayamaaren/xformers_build_pack"
 CLIP_CAT_FOLDER = "clip_cat"
 
@@ -24,11 +19,10 @@ clip_model_name = 'ViT-L/14'
 Category = namedtuple("Category", ["name", "topn", "items"])
 
 re_topn = re.compile(r"\.top(\d+)\.")
-from transformers import CLIPTextModel, CLIPTokenizer, CLIPModel, CLIPTextConfig
 
 
 def category_types():
-    return [f.stem for f in Path(share.interrogator.content_dir).glob('*.txt')]
+    return [f.stem for f in Path("interrogate").glob('*.txt')]
 
 
 def download_default_clip_interrogate_categories(content_dir):
@@ -53,7 +47,6 @@ def download_default_clip_interrogate_categories(content_dir):
 
 
 class InterrogateModels:
-    blip_model = None
     clip_model = None
     clip_preprocess = None
     dtype = None
@@ -97,20 +90,6 @@ class InterrogateModels:
 
         sys.modules["fairscale.nn.checkpoint.checkpoint_activations"] = FakeFairscale
 
-    def load_blip_model(self):
-        self.create_fake_fairscale()
-        import models.blip
-        path = huggingface_hub.hf_hub_download(
-            BLIP_REPO,BLIP_FILE, cache_dir='./hf_cache',
-        )
-        share.blip_model_path = path
-        blip_model = models.blip.blip_decoder(pretrained=share.blip_model_path,
-                                              image_size=blip_image_eval_size, vit='base',
-                                              med_config=share.med_config)
-        blip_model.eval()
-
-        return blip_model
-
     def load_clip_model(self):
         import clip
         if self.running_on_cpu:
@@ -124,13 +103,6 @@ class InterrogateModels:
         return model, preprocess
 
     def load(self):
-        if self.blip_model is None:
-            self.blip_model = self.load_blip_model()
-            if not share.no_half and not self.running_on_cpu:
-                self.blip_model = self.blip_model.half()
-
-        self.blip_model = self.blip_model.to(share.device_interrogate)
-
         if self.clip_model is None:
             self.clip_model, self.clip_preprocess = self.load_clip_model()
             if not share.no_half and not self.running_on_cpu:
@@ -145,14 +117,8 @@ class InterrogateModels:
             if self.clip_model is not None:
                 self.clip_model = self.clip_model.to(share.devCPU)
 
-    def send_blip_to_ram(self):
-        if not share.interrogate_keep_models_in_memory:
-            if self.blip_model is not None:
-                self.blip_model = self.blip_model.to(share.devCPU)
-
     def unload(self):
         self.send_clip_to_ram()
-        self.send_blip_to_ram()
 
         # devices.torch_gc()
 
@@ -178,39 +144,18 @@ class InterrogateModels:
         return [(text_array[top_labels[0][i].numpy()], (top_probs[0][i].numpy() * 100)) for i in range(top_count)]
 
     def generate_caption(self, pil_image):
-        gpu_image = transforms.Compose([
-            transforms.Resize((blip_image_eval_size, blip_image_eval_size), interpolation=InterpolationMode.BICUBIC),
-            transforms.ToTensor(),
-            transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
-        ])(pil_image).unsqueeze(0).type(self.dtype).to(share.device_interrogate)
+        return self.interrogate(pil_image, stringify=True)
 
-        with torch.no_grad():
-            caption = self.blip_model.generate(gpu_image, sample=False, num_beams=share.interrogate_clip_num_beams,
-                                               min_length=share.interrogate_clip_min_length,
-                                               max_length=share.interrogate_clip_max_length)
-
-        return caption[0]
-
-    def interrogate(self, pil_image):
+    def interrogate(self, pil_image, stringify=False):
         res = ""
         # shared.state.begin()
         # shared.state.job = 'interrogate'
+        result = []
         try:
             if share.lowvram or share.medvram:
                 lowvram.send_everything_to_cpu()
-                # devices.torch_gc()
-
             self.load()
 
-            caption = self.generate_caption(pil_image)
-            self.send_blip_to_ram()
-            # devices.torch_gc()
-
-            res = caption
-            result = [{
-                "tag": caption,
-                "rank": 1,
-            }]
             clip_image = self.clip_preprocess(pil_image).unsqueeze(0).type(self.dtype).to(share.device_interrogate)
 
             with torch.no_grad(), share.autocast():
@@ -225,10 +170,8 @@ class InterrogateModels:
                             "tag": match,
                             "rank": score
                         })
-                        # if share.interrogate_return_ranks:
-                        #     res += f", ({match}:{score / 100:.3f})"
-                        # else:
-                        #     res += f", {match}"
+
+
 
         except Exception:
             print("Error interrogating", file=sys.stderr)
@@ -237,5 +180,10 @@ class InterrogateModels:
 
         self.unload()
         # shared.state.end()
-
+        if stringify:
+            tags = [x["tag"] for x in result if x["rank"] > 0.0]
+            return ",".join(tags)
         return result
+
+
+model = InterrogateModels("interrogate")

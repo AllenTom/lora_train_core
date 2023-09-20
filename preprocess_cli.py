@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--flip', action='store_true')
     parser.add_argument('--split', action='store_true')
     parser.add_argument('--caption', action='store_true')
+    parser.add_argument('--caption_clip', action='store_true')
     parser.add_argument('--caption_deepbooru', action='store_true')
     parser.add_argument('--caption_wd', action='store_true')
     parser.add_argument('--wd_general_threshold', action='store', default=0.5, type=float)
@@ -81,6 +82,7 @@ def main():
         process_caption=args.caption,
         process_caption_deepbooru=args.caption_deepbooru,
         process_caption_wd=args.caption_wd,
+        process_caption_clip=args.caption_clip,
         wd_general_threshold=args.wd_general_threshold,
         wd_character_threshold=args.wd_character_threshold,
         wd_model_name=args.wd_model_name,

@@ -3,7 +3,7 @@ import os
 
 import torch
 
-from modules import interrogate
+from modules import bliptagger
 
 device = torch.device('cuda')
 devCPU = cpu = torch.device("cuda")
@@ -12,7 +12,7 @@ device_interrogate = torch.device("cuda")
 precision = "autocast"  # autocast or full
 no_half = False
 interrogate_keep_models_in_memory = False
-interrogator = interrogate.InterrogateModels("interrogate")
+interrogator = bliptagger.InterrogateModels("interrogate")
 interrogate_clip_skip_categories = []
 clip_models_path = "./assets"
 danbooru_model_path = "./assets/model-resnet_custom_v3.pt"

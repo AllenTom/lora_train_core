@@ -1,7 +1,6 @@
 import os
 import sys
 
-sys.path.append(".\\repositories\\BLIP")
 
 import argparse
 import base64
@@ -10,7 +9,7 @@ import json
 import PIL
 
 from deepbooru_cli import get_image_list_from_dir
-from modules import bliptagger
+from modules import cliptagger
 
 
 def process():
@@ -26,7 +25,7 @@ def process():
     parser.add_argument('--no_result', action='store_false')
     # Parse the arguments
     args = parser.parse_args()
-    model = bliptagger.InterrogateModels("ctd_tmp")
+    model = cliptagger.InterrogateModels("interrogate")
     model.load()
 
     srcs = []

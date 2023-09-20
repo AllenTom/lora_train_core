@@ -6,7 +6,7 @@ from PIL import Image, ImageOps
 from fastapi import UploadFile
 
 from modules import autocrop, images, deepbooru, output, share, wd14, anifacedec, yolomodeldec, anipersondec, \
-    anihalfpersondec
+    anihalfpersondec,cliptagger
 
 model = deepbooru.DeepDanbooru()
 
@@ -30,6 +30,7 @@ class PreprocessParams:
     process_caption = False
     process_caption_deepbooru = False
     process_caption_wd = False
+    process_caption_clip=False
     preprocess_txt_action = None
     outputFiles = []
     outputDetail = []
@@ -71,6 +72,11 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
         if len(caption) > 0:
             caption += ", "
         caption += wd14.model.tag_multi(image)
+    if params.process_caption_clip:
+        if len(caption) > 0:
+            caption += ", "
+        caption += cliptagger.model.generate_caption(image)
+
     filename_part = params.src
     filename_part = os.path.splitext(filename_part)[0]
     filename_part = os.path.basename(filename_part)
@@ -146,6 +152,7 @@ def preprocess_work(
         process_split=False,
         process_caption=False,
         process_caption_deepbooru=False,
+        process_caption_clip=False,
         process_caption_wd=False,
         wd_general_threshold=None,
         wd_character_threshold=None,
@@ -165,6 +172,7 @@ def preprocess_work(
         anime_half_body_detect=False,
         anime_half_body_detect_ratio=0,
         box_to_top=False,
+
 ):
     # loading model
     output.printJsonOutput(
@@ -184,6 +192,8 @@ def preprocess_work(
             general_threshold=wd_general_threshold,
             character_threshold=wd_character_threshold,
         )
+    if process_caption_clip:
+        cliptagger.model.load()
     width = process_width
     height = process_height
     files = []
@@ -221,6 +231,7 @@ def preprocess_work(
     params.process_caption_deepbooru = process_caption_deepbooru
     params.preprocess_txt_action = preprocess_txt_action
     params.process_caption_wd = process_caption_wd
+    params.process_caption_clip = process_caption_clip
 
     # pbar = tqdm.tqdm(files)
     if anime_face_detect:

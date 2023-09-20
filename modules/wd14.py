@@ -39,7 +39,7 @@ def load_model(model_repo: str, model_filename: str) -> rt.InferenceSession:
         model_repo, model_filename,
         cache_dir='./hf_cache'
     )
-    model = rt.InferenceSession(path)
+    model = rt.InferenceSession(path,providers=['TensorrtExecutionProvider', 'CUDAExecutionProvider'])
     return model
 
 

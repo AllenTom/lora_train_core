@@ -15,7 +15,7 @@ safetensors==0.2.6
 tensorboard==2.10.1
 tk==0.1.0
 toml==0.10.2
-transformers==4.26.0
+transformers==4.27.1
 voluptuous==0.13.1
 # for BLIP captioning
 fairscale==0.4.13
@@ -33,5 +33,6 @@ websockets==11.0.3
 onnxruntime
 ultralytics
 kornia
+clip-interrogator==0.6.0
 # for kohya_ss library
 .

@@ -51,7 +51,7 @@ class InterrogateModels:
         self.create_fake_fairscale()
         import models.blip
         path = huggingface_hub.hf_hub_download(
-            BLIP_REPO, BLIP_FILE, cache_dir='./hf_cache',
+            BLIP_REPO, BLIP_FILE,
         )
         share.blip_model_path = path
         blip_model = models.blip.blip_decoder(pretrained=share.blip_model_path,

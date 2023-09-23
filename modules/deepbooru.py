@@ -24,7 +24,7 @@ class DeepDanbooru:
 
     def load(self):
         path = huggingface_hub.hf_hub_download(
-            DEEP_DANBOORU_REPO, DEEP_DANBOORU_FILE, cache_dir='./hf_cache'
+            DEEP_DANBOORU_REPO, DEEP_DANBOORU_FILE
         )
         share.danbooru_model_path = path
 

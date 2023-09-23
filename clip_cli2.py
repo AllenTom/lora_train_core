@@ -1,10 +1,11 @@
-import os
-import sys
-
-
 import argparse
 import base64
 import json
+import os
+
+import initapp
+
+initapp.init_global()
 
 from PIL import Image
 
@@ -25,7 +26,7 @@ def process():
     parser.add_argument('--no_result', action='store_false')
     # Parse the arguments
     args = parser.parse_args()
-    model = cliptagger2.model.load()
+    cliptagger2.model.load()
 
     srcs = []
     if args.dir:
@@ -46,7 +47,7 @@ def process():
 
     for src in srcs:
         use_image = Image.open(src)
-        tag_str = model.interrogate(use_image)
+        tag_str = cliptagger2.model.interrogate(use_image,stringify=True)
         print(json.dumps({
             "filename": os.path.basename(src),
             "tags": tag_str

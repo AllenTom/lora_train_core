@@ -4,7 +4,9 @@ sys.path.append(".\\repositories\\BLIP")
 import argparse
 import base64
 import json
-import sys
+import initapp
+
+initapp.init_global()
 
 from modules import preprocess, output, share
 
@@ -21,6 +23,7 @@ def main():
     parser.add_argument('--split', action='store_true')
     parser.add_argument('--caption', action='store_true')
     parser.add_argument('--caption_clip', action='store_true')
+    parser.add_argument('--caption_clip2', action='store_true')
     parser.add_argument('--caption_deepbooru', action='store_true')
     parser.add_argument('--caption_wd', action='store_true')
     parser.add_argument('--wd_general_threshold', action='store', default=0.5, type=float)
@@ -103,7 +106,8 @@ def main():
         anime_person_detect_ratio=args.anime_person_ratio,
         anime_half_body_detect=args.anime_half,
         anime_half_body_detect_ratio=args.anime_half_ratio,
-        box_to_top=args.to_anime_body_top
+        box_to_top=args.to_anime_body_top,
+        process_caption_clip2=args.caption_clip2
     )
 
 

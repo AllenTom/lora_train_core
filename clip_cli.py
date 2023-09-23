@@ -1,6 +1,7 @@
 import os
-import sys
+import initapp
 
+initapp.init_global()
 
 import argparse
 import base64

@@ -2,7 +2,9 @@ import os
 import sys
 
 sys.path.append(".\\repositories\\BLIP")
+import initapp
 
+initapp.init_global()
 import argparse
 import base64
 import json

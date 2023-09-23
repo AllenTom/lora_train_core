@@ -24,7 +24,6 @@ LABEL_FILENAME = "selected_tags.csv"
 def load_labels() -> list[str]:
     path = huggingface_hub.hf_hub_download(
         MOAT_MODEL_REPO, LABEL_FILENAME,
-        cache_dir='./hf_cache'
     )
     df = pd.read_csv(path)
     tag_names = df["name"].tolist()
@@ -37,7 +36,6 @@ def load_labels() -> list[str]:
 def load_model(model_repo: str, model_filename: str) -> rt.InferenceSession:
     path = huggingface_hub.hf_hub_download(
         model_repo, model_filename,
-        cache_dir='./hf_cache'
     )
     model = rt.InferenceSession(path,providers=['TensorrtExecutionProvider', 'CUDAExecutionProvider'])
     return model

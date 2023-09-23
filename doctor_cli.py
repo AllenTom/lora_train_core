@@ -1,5 +1,7 @@
 import argparse
+import initapp
 
+initapp.init_global()
 from modules import doctor
 
 if __name__ == '__main__':

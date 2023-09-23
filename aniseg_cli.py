@@ -1,7 +1,9 @@
 import base64
 import json
 import os
+import initapp
 
+initapp.init_global()
 import argparse
 import time
 

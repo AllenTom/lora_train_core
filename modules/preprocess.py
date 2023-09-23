@@ -6,7 +6,7 @@ from PIL import Image, ImageOps
 from fastapi import UploadFile
 
 from modules import autocrop, images, deepbooru, output, share, wd14, anifacedec, yolomodeldec, anipersondec, \
-    anihalfpersondec,cliptagger
+    anihalfpersondec,cliptagger,cliptagger2
 
 model = deepbooru.DeepDanbooru()
 
@@ -31,6 +31,7 @@ class PreprocessParams:
     process_caption_deepbooru = False
     process_caption_wd = False
     process_caption_clip=False
+    process_caption_clip2=False
     preprocess_txt_action = None
     outputFiles = []
     outputDetail = []
@@ -76,6 +77,10 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
         if len(caption) > 0:
             caption += ", "
         caption += cliptagger.model.generate_caption(image)
+    if params.process_caption_clip2:
+        if len(caption) > 0:
+            caption += ", "
+        caption += cliptagger2.model.generate_caption(image)
 
     filename_part = params.src
     filename_part = os.path.splitext(filename_part)[0]
@@ -153,6 +158,7 @@ def preprocess_work(
         process_caption=False,
         process_caption_deepbooru=False,
         process_caption_clip=False,
+        process_caption_clip2=False,
         process_caption_wd=False,
         wd_general_threshold=None,
         wd_character_threshold=None,
@@ -194,6 +200,9 @@ def preprocess_work(
         )
     if process_caption_clip:
         cliptagger.model.load()
+    if process_caption_clip2:
+        cliptagger2.model.load()
+
     width = process_width
     height = process_height
     files = []
@@ -232,6 +241,7 @@ def preprocess_work(
     params.preprocess_txt_action = preprocess_txt_action
     params.process_caption_wd = process_caption_wd
     params.process_caption_clip = process_caption_clip
+    params.process_caption_clip2 = process_caption_clip2
 
     # pbar = tqdm.tqdm(files)
     if anime_face_detect:

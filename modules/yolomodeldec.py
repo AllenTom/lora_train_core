@@ -7,7 +7,7 @@ from ultralytics import YOLO
 
 def load_model(repo_id, model_filename):
     path = huggingface_hub.hf_hub_download(
-        repo_id, model_filename, cache_dir='./hf_cache'
+        repo_id, model_filename
     )
     model = YOLO(path)
     return model

@@ -1,6 +1,8 @@
 import argparse
 import base64
+import initapp
 
+initapp.init_global()
 import PIL
 
 from modules import deepbooru, wd14
@@ -16,6 +18,8 @@ def get_image_list_from_dir(dir):
             if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".jpeg"):
                 images.append(os.path.join(root, file))
     return images
+
+
 def main():
     # Create the parser
     parser = argparse.ArgumentParser()
@@ -25,7 +29,7 @@ def main():
     parser.add_argument('--dir', action='store')
     parser.add_argument('--general_threshold', action='store', default=float(0.5), type=float)
     parser.add_argument('--character_threshold', action='store', default=float(0.5), type=float)
-    parser.add_argument('--model', action='store',default='MOAT')
+    parser.add_argument('--model', action='store', default='MOAT')
     parser.add_argument('--with_rank', action='store_true')
     parser.add_argument('--per', action='store_true')
     parser.add_argument('--no_result', action='store_false')
@@ -57,7 +61,7 @@ def main():
 
     for src in srcs:
         testImage = PIL.Image.open(src)
-        tag_str = wdmodel.tag_multi(testImage,include_ranks=args.with_rank)
+        tag_str = wdmodel.tag_multi(testImage, include_ranks=args.with_rank)
         if not args.with_rank:
             tags = tag_str.split(",")
         else:
@@ -81,6 +85,7 @@ def main():
     if args.no_result:
         print(json.dumps(result))
 
+
 if __name__ == '__main__':
     # try :
     #     main()
@@ -90,4 +95,3 @@ if __name__ == '__main__':
     #     }))
 
     main()
-

@@ -1,6 +1,8 @@
 import argparse
 import base64
+import initapp
 
+initapp.init_global()
 import PIL
 
 from modules import deepbooru

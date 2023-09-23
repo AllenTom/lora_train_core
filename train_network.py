@@ -4,6 +4,9 @@ import importlib
 import json
 import math
 import os
+import initapp
+
+initapp.init_global()
 import random
 import time
 import traceback

@@ -14,8 +14,9 @@ class InterrogateModels:
             clip_model_name="ViT-L-14/openai",
             clip_model_path="./assets/clip2/model",
             data_path="./assets/clip2/data",
-            cache_path="./assets/clip2/data",
+            cache_path="./assets/clip2/cache",
         )
+        self.config.apply_low_vram_defaults()
 
     def load(self):
         self.model = Interrogator(self.config)

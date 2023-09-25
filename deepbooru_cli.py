@@ -72,9 +72,4 @@ def main():
         print(json.dumps(result))
 
 if __name__ == '__main__':
-    try :
-        main()
-    except Exception as e:
-        print(json.dumps({
-            "err": str(e)
-        }))
+    main()

@@ -37,7 +37,7 @@ def load_model(model_repo: str, model_filename: str) -> rt.InferenceSession:
     path = huggingface_hub.hf_hub_download(
         model_repo, model_filename,
     )
-    model = rt.InferenceSession(path,providers=['TensorrtExecutionProvider', 'CUDAExecutionProvider'])
+    model = rt.InferenceSession(path,providers=['AzureExecutionProvider', 'CPUExecutionProvider'])
     return model
 
 

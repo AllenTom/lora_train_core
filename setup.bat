@@ -11,9 +11,9 @@ echo { "event": "activate-venv" }
 call .\venv\Scripts\activate.bat
 :skip_venv
 echo { "event": "install-requirements" }
-%PYTHON% -m pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116 || (echo {"event":"install-failed"} & exit /b)
+%PYTHON% -m pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117 || (echo {"event":"install-failed"} & exit /b)
 %PYTHON% -m pip install --use-pep517 --upgrade -r requirements.txt || (echo {"event":"install-failed"} & exit /b)
-%PYTHON% -m pip install -U -I --no-deps https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl || (echo {"event":"install-failed"} & exit /b)
+%PYTHON% -m pip install -U xformers || (echo {"event":"install-failed"} & exit /b)
 
 if ["%SKIP_VENV%"] == ["1"] goto :copy_to_python
 copy /y .\bitsandbytes_windows\*.dll .\venv\Lib\site-packages\bitsandbytes\

@@ -143,5 +143,7 @@ gui-user.ps1
 
 /extra
 /.idea
+/outputs
+/img_out
 
 assets/*.pt*

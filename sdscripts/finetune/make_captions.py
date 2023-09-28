@@ -105,7 +105,8 @@ def main(args):
         for (image_path, _), caption in zip(path_imgs, captions):
             with open(os.path.splitext(image_path)[0] + args.caption_extension, "wt", encoding="utf-8") as f:
                 f.write(caption + "\n")
-                if args.debug:                    print(image_path, caption)
+                if args.debug:
+                    print(image_path, caption)
 
     # 読み込みの高速化のためにDataLoaderを使うオプション
     if args.max_data_loader_n_workers is not None:

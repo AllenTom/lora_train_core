@@ -868,6 +868,13 @@ class NetworkTrainer:
                     logs = self.generate_step_logs(args, current_loss, avr_loss, lr_scheduler, keys_scaled, mean_norm, maximum_norm)
                     accelerator.log(logs, step=global_step)
 
+                train_status.step = global_step
+                train_status.epoch = epoch + 1
+                train_status.total_step = args.max_train_steps
+                train_status.current_loss = current_loss
+                train_status.average_loss = avr_loss
+                train_status.total_epoch = num_train_epochs
+
                 if global_step >= args.max_train_steps:
                     break
                 sender.send_message_to_clients(json.dumps(train_status.output()))

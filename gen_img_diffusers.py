@@ -45,7 +45,7 @@ VGG(
   )
 )
 """
-
+import base64
 import itertools
 import json
 from typing import Any, List, NamedTuple, Optional, Tuple, Union, Callable
@@ -2620,6 +2620,9 @@ def main(args):
     else:
         prompt_list = []
 
+    if args.input_prompts is not None:
+        prompt_list = args.input_prompts
+
     if args.interactive:
         args.n_iter = 1
 
@@ -3016,6 +3019,8 @@ def main(args):
                         "path": os.path.join(args.outdir, fln),
                         "filename": fln,
                         "models": args.network_weights,
+                        "session":session,
+                        "id":id
                     },
                     message="image saved",
                     event="image_saved",
@@ -3080,6 +3085,9 @@ def main(args):
                     prompt_args = raw_prompt.strip().split(" --")
                     prompt = prompt_args[0]
                     print(f"prompt {prompt_index+1}/{len(prompt_list)}: {prompt}")
+
+                    session = None
+                    id = None
 
                     for parg in prompt_args[1:]:
                         try:
@@ -3146,6 +3154,17 @@ def main(args):
                                 while len(network_muls) < len(networks):
                                     network_muls.append(network_muls[-1])
                                 print(f"network mul: {network_muls}")
+                                continue
+
+                            m = re.match(r"session (.+)", parg, re.IGNORECASE)
+                            if m:  # session
+                                session = m.group(1)
+                                print(f"session: {session}")
+                                continue
+                            m = re.match(r"id (.+)", parg, re.IGNORECASE)
+                            if m:  # id
+                                id = m.group(1)
+                                print(f"id: {id}")
                                 continue
 
                         except ValueError as ex:
@@ -3488,19 +3507,37 @@ def setup_parser() -> argparse.ArgumentParser:
         nargs="*",
         help="ControlNet guidance ratio for steps / ControlNetでガイドするステップ比率",
     )
-    parser.add_argument('--json_out', action='store_true', default=None)
+
 
     # parser.add_argument(
     #     "--control_net_image_path", type=str, default=None, nargs="*", help="image for ControlNet guidance / ControlNetでガイドに使う画像"
     # )
 
+
     return parser
+def custom_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument("--prompt_json64",type=str)
+    parser.add_argument('--json_out', action='store_true', default=None)
+    return parser
+def convert_custom_args(args):
+    if args.prompt_json64 is not None:
+        decoded_bytes = base64.b64decode(args.prompt_json64)
+        decoded_string = decoded_bytes.decode('utf-8')
+        input_obj = json.loads(decoded_string)
+        args.input_prompts = input_obj
+    else:
+        args.input_prompts = None
+    return args
+
+
+
+
 
 
 if __name__ == "__main__":
     parser = setup_parser()
-
+    parser = custom_parser(parser)
     args = parser.parse_args()
     if args.json_out:
         output.jsonOut = True
-    main(args)
+    main(convert_custom_args(args))

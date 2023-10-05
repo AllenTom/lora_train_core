@@ -1,10 +1,12 @@
 import requests
 
+session = requests.Session()
+session.trust_env = False
 url = 'http://localhost:6745'
 
 
 def send_model_save_callback(path):
-    resp = requests.post(url + '/callback/loreSaved', json={'path': path})
+    resp = session.post(url + '/callback/loreSaved', json={'path': path})
 
 
 class TrainStatus:
@@ -30,7 +32,7 @@ def update_train_status(status):
     #     response = grequests.map([request])[0]
     # except:
     #     pass
-    resp = requests.post(url + '/callback/trainProgress', json={'status': status.output()})
+    resp = session.post(url + '/callback/trainProgress', json={'status': status.output()})
 
 
 def send_train_status(status):

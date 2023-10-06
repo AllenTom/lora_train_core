@@ -70,10 +70,10 @@ if __name__ == '__main__':
         unix_time_string = str(unix_time)
 
         output_name = f'seg_{unix_time_string}_{os.path.basename(path)}'
-        cv2.imwrite(f'{opt.out}\\{output_name}.png', img)
+        cv2.imwrite(f'{opt.out}\\{output_name}', img)
         output.printJsonOutput(f"process {i + 1} of {len(items)}", event="aniseg_progress", vars={
             "current": i + 1,
             "total": len(items),
             "path": path,
-            "output": f'{opt.out}\\{output_name}.png'
+            "output": f'{opt.out}\\{output_name}'
         })

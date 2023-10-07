@@ -2,6 +2,7 @@ import math
 import os
 from typing import List, Optional
 
+import huggingface_hub
 from PIL import Image, ImageOps
 from fastapi import UploadFile
 
@@ -9,7 +10,8 @@ from modules import autocrop, images, deepbooru, output, share, wd14, anifacedec
     anihalfpersondec,cliptagger,cliptagger2
 
 model = deepbooru.DeepDanbooru()
-
+FACE_CROP_REPO = "takayamaaren/xformers_build_pack"
+FACE_CROP = "face_detection_yunet_2022mar.onnx"
 
 class PreprocessImageFile:
     def __init__(self, filename: str, img: Image, raw):
@@ -312,7 +314,10 @@ def preprocess_work(
 
             dnn_model_path = None
             try:
-                dnn_model_path = os.path.join('./assets', 'face_detection_yunet_2022mar.onnx')
+                path = huggingface_hub.hf_hub_download(
+                    FACE_CROP_REPO, FACE_CROP,
+                )
+                dnn_model_path = path
             except Exception as e:
                 print(
                     "Unable to load face detection model for auto crop selection. Falling back to lower quality haar method.",

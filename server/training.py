@@ -5,15 +5,16 @@ from pydantic import BaseModel, Field
 
 from library import train_util
 from server import project, paths, sender, utils
-from train_network import setup_parser, train
-
-class Task(BaseModel):
-    id: str = Field()
-    thread_inst: threading.Thread = Field()
+from train_network import setup_parser, on_custom_args, NetworkTrainer
 
 
+class Task():
+    id: str
+    thread_inst: threading.Thread
 
-class TaskPool(BaseModel):
+
+
+class TaskPool():
     task_list = []
 
     def add_task(self, task: Task):
@@ -83,7 +84,10 @@ def build_train_args(meta: project.ProjectMeta, config: project.TrainConfig):
 def train_func(args):
     try:
         sender.send_message_to_clients("train start")
-        train(args)
+        if (args.network_args is not None) and (len(args.network_args) > 0) and (args.network_args[0].count('=') > 1):
+            args.network_args = args.network_args[0].split(" ")
+        trainer = NetworkTrainer()
+        trainer.train(args)
     except Exception as e:
         print(e)
 
@@ -93,8 +97,10 @@ def train_project(id: str, config_id: str):
     meta = project.ProjectMeta.load_from_file(os.path.join(project_path, "project.json"))
     config = next(filter(lambda x: x.id == config_id, meta.train_configs))
     parser = setup_parser()
-    args = parser.parse_args(build_train_args(meta, config))
+    args = parser.parse_args()
     args = train_util.read_config_from_file(args, parser)
+    args = on_custom_args(args)
+
     thread = threading.Thread(target=train_func, args=(args,))
     thread.start()
     return "ok"

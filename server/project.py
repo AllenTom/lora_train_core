@@ -543,3 +543,8 @@ def add_train_config(id: str, name: str, lora_preset_name: str, model_name: str,
     )
     meta.add_train_config(config)
     return meta
+
+def read_project_meta(id: str):
+    project_path = get_project_path(id)
+    meta = ProjectMeta.load_from_file(os.path.join(project_path, "project.json"))
+    return meta

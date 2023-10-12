@@ -1,11 +1,10 @@
-import os
 import re
 
 import huggingface_hub
 import numpy as np
 import torch
 
-from modules import deepbooru_model, share, images, modelloader, output
+from modules import deepbooru_model, share, images
 
 re_special = re.compile(r'([\\()])')
 interrogate_deepbooru_score_threshold = 0.7

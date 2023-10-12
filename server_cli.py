@@ -1,3 +1,6 @@
+import initapp
+
+initapp.init_global()
 from fastapi import FastAPI, Request, UploadFile, WebSocket
 from pydantic import Field, BaseModel
 
@@ -110,3 +113,11 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.get("/action/out")
 async def get_out():
     return training.out_text
+
+@app.get("/action/getprojectmeta")
+async def get_project_meta(id: str):
+    meta = project.read_project_meta(id)
+    return {
+        "result": "success",
+        "data": meta
+    }

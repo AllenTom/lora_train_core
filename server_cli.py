@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request, UploadFile, WebSocket
 from pydantic import Field, BaseModel
 
 from server import project, training, sender
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
@@ -41,7 +42,7 @@ async def new_project(request: Request):
 async def load_project(request: Request):
     data = await request.json()
     print(data)
-    out = project.load_project_service(data["name"])
+    out = await project.load_project_service(data["name"])
     return {
         "result": "success",
         "data": out
@@ -110,9 +111,11 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         sender.active_connections.remove(websocket)
 
+
 @app.get("/action/out")
 async def get_out():
     return training.out_text
+
 
 @app.get("/action/getprojectmeta")
 async def get_project_meta(id: str):
@@ -121,3 +124,14 @@ async def get_project_meta(id: str):
         "result": "success",
         "data": meta
     }
+
+@app.get("/action/getprojectlist")
+async def getprojectlist():
+    return {
+        "result": "success",
+        "data": project.get_project_list()
+    }
+@app.get('/resource/{project_id}/{res_type}/{res}')
+async def get_resource(project_id: str, res_type: str, res: str):
+    resource_path = project.get_project_resource(project_id, res_type, res)
+    return FileResponse(resource_path)

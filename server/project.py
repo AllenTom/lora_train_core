@@ -235,8 +235,43 @@ class ProjectMeta(BaseModel):
         self.save()
 
 
+class Project(BaseModel):
+    models: List[SaveModel]
+    train_configs: List[TrainConfig] = Field(
+        serialization_alias="trainConfigs"
+    )
+    preprocess: List[DatasetItem]
+    dataset: List[DatasetFolder]
+    original: List[OriginalItem]
+    params: ProjectParam
+    preview_props: Optional[dict] = Field(
+        serialization_alias="previewProps"
+    )
+    project_path: Optional[str] = Field(
+        serialization_alias="projectPath"
+    )
+
+    # def __init__(self):
+    #     self.models = []
+    #     self.train_configs = []
+    #     self.dataset = []
+    #     self.original = []
+    #     self.params = None
+    #     self.preview_props = {}
+    #     self.project_path = None
+    #     super().__init__()
+
+    def from_meta(self, meta: ProjectMeta):
+        self.models = meta.models
+        self.train_configs = meta.train_configs
+        self.dataset = meta.dataset
+        self.params = meta.params
+        self.preview_props = meta.preview_props
+        self.project_path = meta.project_path
+
+
 async def load_original_images(meta: ProjectMeta) -> Optional[List[OriginalItem]]:
-    original_folder_path = paths.get_original_image_folder()
+    original_folder_path = paths.get_original_image_folder(meta.project_path)
     if not original_folder_path:
         log.error('original folder not found on load original image')
         return None
@@ -366,14 +401,53 @@ async def load_preprocess_images(meta: ProjectMeta) -> Optional[List[DatasetItem
     return result
 
 
-def load_project(project_path: str) -> Optional[ProjectMeta]:
+def link_to_real_original_image(items: List[OriginalItem]) -> List[OriginalItem]:
+    for item in items:
+        item.src = "/resource/original/" + item.src
+        item.thumbnail = "/resource/image/" + item.thumbnail
+        item.file_name = os.path.basename(item.src)
+    return items
+
+
+def link_to_real_preprocess_image(items: List[DatasetItem]) -> List[DatasetItem]:
+    for item in items:
+        item.image_path = "/resource/preprocess/" + os.path.basename(item.image_path)
+        item.image_name = os.path.basename(item.image_path)
+        if item.caption_path is not None:
+            item.caption_path = "/resource/preprocess/" + os.path.basename(item.caption_path)
+    return items
+
+
+async def load_project(project_path: str) -> Optional[Project]:
     meta_file_path = os.path.join(project_path, "project.json")
     if not os.path.exists(meta_file_path):
         return None
     meta = ProjectMeta.load_from_file(meta_file_path)
-    load_original_images(meta)
-    load_preprocess_images(meta)
-    return meta
+
+    original_items = await load_original_images(meta)
+    if original_items is None:
+        original_items = []
+    original_items = link_to_real_original_image(original_items)
+
+    preprocess_items = await load_preprocess_images(meta)
+    if preprocess_items is None:
+        preprocess_items = []
+    preprocess_items = link_to_real_preprocess_image(preprocess_items)
+
+    project = Project(
+        models=meta.models,
+        train_configs=meta.train_configs,
+        preprocess=preprocess_items,
+        dataset=meta.dataset,
+        original=original_items,
+        params=meta.params,
+        preview_props=meta.preview_props,
+        project_path=meta.project_path
+
+
+    )
+
+    return project
 
 
 def new_project(name, width=512, height=512):
@@ -383,10 +457,10 @@ def new_project(name, width=512, height=512):
     return meta
 
 
-def load_project_service(name):
+async def load_project_service(name):
     store_path = paths.get_project_store()
     project_path = os.path.join(store_path, name)
-    meta = load_project(project_path)
+    meta = await load_project(project_path)
     return meta
 
 
@@ -544,7 +618,43 @@ def add_train_config(id: str, name: str, lora_preset_name: str, model_name: str,
     meta.add_train_config(config)
     return meta
 
+
 def read_project_meta(id: str):
     project_path = get_project_path(id)
     meta = ProjectMeta.load_from_file(os.path.join(project_path, "project.json"))
     return meta
+
+
+def get_project_list():
+    store_path = paths.get_project_store()
+    projects = []
+    for item in os.listdir(store_path):
+        project_path = os.path.join(store_path, item)
+        if not os.path.isdir(project_path):
+            continue
+        meta_file_path = os.path.join(project_path, "project.json")
+        if not os.path.exists(meta_file_path):
+            continue
+        projects.append({
+            "name": item
+        })
+    return projects
+
+
+def get_project_resource(project_id, res_type, res):
+    store_path = paths.get_project_store()
+    project_path = os.path.join(store_path, project_id)
+    if not os.path.exists(project_path):
+        return None
+    res_folder_path = None
+    if res_type == 'preprocess':
+        res_folder_path = os.path.join(project_path, 'preprocess')
+    elif res_type == 'original':
+        res_folder_path = os.path.join(project_path, 'original')
+    elif res_type == 'image':
+        res_folder_path = os.path.join(project_path, 'image')
+    if res_folder_path is None:
+        return None
+
+    res_path = os.path.join(res_folder_path, res)
+    return res_path

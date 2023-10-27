@@ -1,6 +1,8 @@
 import asyncio
 import json
 
+from fastapi import websockets
+
 active_connections = []
 
 
@@ -24,5 +26,7 @@ class Message:
 
 def send_message_to_clients(type='info', message='', vars={}, event='message', id='global'):
     for connection in active_connections:
+        if connection.application_state != websockets.WebSocketState.CONNECTED:
+            continue
         send_message = Message(type, message, vars, event, id)
-        asyncio.run(connection.send_text(json.dumps(send_message.to_json())))
+        asyncio.create_task(connection.send_text(json.dumps(send_message.to_json())))

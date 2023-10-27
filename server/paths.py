@@ -35,3 +35,10 @@ def get_model_output_folder(project_path: str) -> str:
     if not os.path.exists(original_folder_path):
         os.makedirs(original_folder_path, exist_ok=True)
     return original_folder_path
+
+
+def get_cache_image_folder(project_path: str) -> str:
+    folder_path = os.path.join(project_path, "image")
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path, exist_ok=True)
+    return folder_path

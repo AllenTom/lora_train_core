@@ -7,6 +7,8 @@ from typing import List, Optional
 from PIL import Image
 from fastapi import UploadFile
 from pydantic import BaseModel, Field
+from typing_extensions import Annotated
+
 from modules import preprocess, output, share
 
 from server import paths, utils
@@ -115,15 +117,26 @@ class SavePreprocessItem(BaseModel):
 
 class DatasetItem(BaseModel):
     hash: str
-    image_name: str
-    image_path: str
-    caption_path: Optional[str] = None
-    captions: Optional[List[str]] = None
-    original_path: Optional[str] = None
+    image_name: str = Field(
+        serialization_alias="imageName",
+        type=str
+    )
+    image_path: str = Field(
+        serialization_alias="imagePath",
+        type=str
+    )
+    caption_path: Annotated[Optional[str], Field(
+        serialization_alias="captionPath",
+    )] = None
+    captions: Annotated[Optional[List[str]], Field(
+        serialization_alias="captions",
+    )] = None
+    original_path: Annotated[Optional[str], Field(
+        serialization_alias="originalPath",
+    )] = None
 
     @staticmethod
     def from_json_dict(data):
-        print(data)
         return DatasetItem(
             hash=data["hash"],
             image_name=data["image_name"],
@@ -134,15 +147,28 @@ class DatasetItem(BaseModel):
         )
 
 
+def get_preprocess_path(project_path):
+    preprocess_path: str = os.path.join(project_path, 'preprocess')
+    if not os.path.exists(preprocess_path):
+        os.makedirs(preprocess_path)
+    return preprocess_path
+
+
 class ProjectMeta(BaseModel):
     models: List[SaveModel]
     train_configs: List[TrainConfig] = Field(
         serialization_alias="trainConfigs"
     )
-    preprocess: List[SavePreprocessItem]
-    dataset: List[DatasetFolder]
-    original: List[OriginalItem]
-    params: ProjectParam
+    preprocess: Annotated[List[SavePreprocessItem], Field(
+        init_var=True
+    )] = []
+    dataset: Annotated[List[DatasetFolder], Field(
+        init_var=True
+    )] = []
+    original: Annotated[List[OriginalItem], Field(
+        init_var=True
+    )] = []
+    params: Annotated[ProjectParam, Field()]
     preview_props: Optional[dict] = Field(
         serialization_alias="previewProps"
     )
@@ -234,13 +260,16 @@ class ProjectMeta(BaseModel):
             self.train_configs.append(item)
         self.save()
 
+    def get_project_id(self):
+        return os.path.basename(self.project_path)
+
 
 class Project(BaseModel):
     models: List[SaveModel]
     train_configs: List[TrainConfig] = Field(
         serialization_alias="trainConfigs"
     )
-    preprocess: List[DatasetItem]
+    source: List[DatasetItem]
     dataset: List[DatasetFolder]
     original: List[OriginalItem]
     params: ProjectParam
@@ -268,6 +297,18 @@ class Project(BaseModel):
         self.params = meta.params
         self.preview_props = meta.preview_props
         self.project_path = meta.project_path
+
+
+def load_original_from_file(image_path: str):
+    file_hash = utils.read_sha256_from_file_path(image_path)
+    file_name = os.path.basename(image_path)
+    thumbnail_name = os.path.splitext(file_name)[0] + "_thumbnail.png"
+    return OriginalItem(
+        hash=file_hash,
+        src=file_name,
+        thumbnail=thumbnail_name,
+        file_name=file_name
+    )
 
 
 async def load_original_images(meta: ProjectMeta) -> Optional[List[OriginalItem]]:
@@ -315,34 +356,36 @@ def read_caption(caption_file_path: str) -> List[str]:
     return [it.strip() for it in caption.split(',')]
 
 
+def load_dataset_item_from_file(image_path: str):
+    data_item = DatasetItem(
+        hash=utils.read_sha256_from_file_path(image_path),
+        image_name=os.path.basename(image_path),
+        image_path=image_path
+    )
+
+    caption_file_name = os.path.splitext(os.path.basename(image_path))[0] + '.txt'
+    caption_file_path = os.path.join(image_path, caption_file_name)
+
+    if os.path.exists(caption_file_path):
+        caption_tags = read_caption(caption_file_path)
+        if len(caption_tags) > 0:
+            data_item.caption_path = caption_file_path
+            data_item.captions = caption_tags
+    return data_item
+
+
 async def scan_image_files(image_path: str) -> List[DatasetItem]:
     result: List[DatasetItem] = []
     dir = os.listdir(image_path)
     image_files = [file for file in dir if os.path.splitext(file.lower())[1] in ['.png', '.jpg', '.jpeg']]
     for file in image_files:
-        data_item = DatasetItem(
-            hash=utils.read_sha256_from_file_path(os.path.join(image_path, file)),
-            image_name=file,
-            image_path=os.path.join(image_path, file)
-        )
-
-        caption_file_name = os.path.splitext(file)[0] + '.txt'
-        caption_file_path = os.path.join(image_path, caption_file_name)
-
-        if os.path.exists(caption_file_path):
-            caption_tags = read_caption(caption_file_path)
-            if len(caption_tags) > 0:
-                data_item.caption_path = caption_file_path
-                data_item.captions = caption_tags
-
+        data_item = load_dataset_item_from_file(os.path.join(image_path, file))
         result.append(data_item)
     return result
 
 
 async def load_preprocess_images(meta: ProjectMeta) -> Optional[List[DatasetItem]]:
-    preprocess_path: str = os.path.join(meta.project_path, 'preprocess')
-    if not os.path.exists(preprocess_path):
-        os.makedirs(preprocess_path)
+    preprocess_path: str = get_preprocess_path(meta.project_path)
 
     image_items = await scan_image_files(preprocess_path)
 
@@ -350,28 +393,29 @@ async def load_preprocess_images(meta: ProjectMeta) -> Optional[List[DatasetItem
     item_to_remove = []
 
     for preprocess_item in meta.preprocess:
-
         is_exist = next((x for x in image_items if x.hash == preprocess_item.hash), None)
         # item not exist
         if not is_exist:
-            invalid_item_hashes.append(preprocess_item.hash)
+            item_to_remove.append(preprocess_item)
             continue
 
-        # item exist but not match
+        # original item exist but not match
         for original_item in meta.original:
             if original_item.hash == preprocess_item.src:
                 is_exist.original_path = original_item.hash
                 break
-
-        if is_exist.original_path is None:
-            invalid_item_hashes.append(preprocess_item.hash)
-            continue
-
         # invalid hash
         if preprocess_item.hash != is_exist.hash:
             item_to_remove.append(is_exist)
             invalid_item_hashes.append(preprocess_item.hash)
             continue
+    # find out item not in meta
+    for image_item in image_items:
+        if image_item.hash not in invalid_item_hashes:
+            preprocess_item = next((x for x in meta.preprocess if x.hash == image_item.hash), None)
+            if preprocess_item is None:
+                item_to_remove.append(image_item)
+                invalid_item_hashes.append(image_item.hash)
     # clean up invalid item
     for datasetItem in item_to_remove:
         os.unlink(datasetItem.image_path)
@@ -401,20 +445,20 @@ async def load_preprocess_images(meta: ProjectMeta) -> Optional[List[DatasetItem
     return result
 
 
-def link_to_real_original_image(items: List[OriginalItem]) -> List[OriginalItem]:
+def link_to_real_original_image(items: List[OriginalItem], project_name: str) -> List[OriginalItem]:
     for item in items:
-        item.src = "/resource/original/" + item.src
-        item.thumbnail = "/resource/image/" + item.thumbnail
+        item.src = f"/resource/{project_name}/original/{item.src}"
+        item.thumbnail = f"/resource/{project_name}/image/{item.thumbnail}"
         item.file_name = os.path.basename(item.src)
     return items
 
 
-def link_to_real_preprocess_image(items: List[DatasetItem]) -> List[DatasetItem]:
+def link_to_real_preprocess_image(items: List[DatasetItem], project_name: str) -> List[DatasetItem]:
     for item in items:
-        item.image_path = "/resource/preprocess/" + os.path.basename(item.image_path)
+        item.image_path = f"/resource/{project_name}/preprocess/{os.path.basename(item.image_path)}"
         item.image_name = os.path.basename(item.image_path)
         if item.caption_path is not None:
-            item.caption_path = "/resource/preprocess/" + os.path.basename(item.caption_path)
+            item.caption_path = f"/resource/{project_name}/preprocess/" + os.path.basename(item.caption_path)
     return items
 
 
@@ -427,24 +471,22 @@ async def load_project(project_path: str) -> Optional[Project]:
     original_items = await load_original_images(meta)
     if original_items is None:
         original_items = []
-    original_items = link_to_real_original_image(original_items)
+    original_items = link_to_real_original_image(original_items, os.path.basename(project_path))
 
     preprocess_items = await load_preprocess_images(meta)
     if preprocess_items is None:
         preprocess_items = []
-    preprocess_items = link_to_real_preprocess_image(preprocess_items)
+    preprocess_items = link_to_real_preprocess_image(preprocess_items, os.path.basename(project_path))
 
     project = Project(
         models=meta.models,
         train_configs=meta.train_configs,
-        preprocess=preprocess_items,
+        source=preprocess_items,
         dataset=meta.dataset,
         original=original_items,
         params=meta.params,
         preview_props=meta.preview_props,
         project_path=meta.project_path
-
-
     )
 
     return project

@@ -1,10 +1,12 @@
+from typing import List, Annotated
+
 import initapp
 
 initapp.init_global()
 from fastapi import FastAPI, Request, UploadFile, WebSocket
 from pydantic import Field, BaseModel
 
-from server import project, training, sender
+from server import project, training, sender, preprocess
 from fastapi.responses import FileResponse
 
 app = FastAPI()
@@ -101,7 +103,6 @@ async def train(request: Request):
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     sender.active_connections.append(websocket)  # Add the connection to the list
-
     try:
         while True:
             data = await websocket.receive_text()
@@ -135,3 +136,7 @@ async def getprojectlist():
 async def get_resource(project_id: str, res_type: str, res: str):
     resource_path = project.get_project_resource(project_id, res_type, res)
     return FileResponse(resource_path)
+
+@app.post("/action/makepreorpcess")
+async def make_preprocess(file: List[UploadFile], id: str):
+    return await preprocess.preprocess_service(id, file)

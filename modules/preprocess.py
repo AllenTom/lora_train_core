@@ -1,17 +1,20 @@
+import io
 import math
 import os
 from typing import List, Optional
 
 import huggingface_hub
-from PIL import Image, ImageOps
+import PIL.Image as Image
+import PIL.ImageOps as ImageOps
 from fastapi import UploadFile
 
 from modules import autocrop, images, deepbooru, output, share, wd14, anifacedec, yolomodeldec, anipersondec, \
-    anihalfpersondec,cliptagger,cliptagger2
+    anihalfpersondec, cliptagger, cliptagger2
 
 model = deepbooru.DeepDanbooru()
 FACE_CROP_REPO = "takayamaaren/xformers_build_pack"
 FACE_CROP = "face_detection_yunet_2022mar.onnx"
+
 
 class PreprocessImageFile:
     def __init__(self, filename: str, img: Image, raw):
@@ -20,8 +23,10 @@ class PreprocessImageFile:
         self.raw = raw
 
     @staticmethod
-    def from_upload_file(file: UploadFile):
-        return PreprocessImageFile(file.filename, Image.open(file.file).convert("RGB"), raw=file)
+    async def from_upload_file(file: UploadFile):
+        request_object_content = await file.read()
+        img = Image.open(io.BytesIO(request_object_content))
+        return PreprocessImageFile(file.filename, img.convert("RGB").copy(), raw=file)
 
 
 class PreprocessParams:
@@ -32,11 +37,14 @@ class PreprocessParams:
     process_caption = False
     process_caption_deepbooru = False
     process_caption_wd = False
-    process_caption_clip=False
-    process_caption_clip2=False
+    process_caption_clip = False
+    process_caption_clip2 = False
     preprocess_txt_action = None
     outputFiles = []
     outputDetail = []
+    on_output_callback = None
+    current_index = 0
+    total = 0
 
 
 def center_crop(image: Image, w: int, h: int):
@@ -112,6 +120,14 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
         "src": params.src,
         "name": f"{basename}.png",
     })
+    if params.on_output_callback is not None:
+        params.on_output_callback({
+            "dest": image_path,
+            "src": params.src,
+            "name": f"{basename}.png",
+            "index": params.current_index,
+            "total": params.total,
+        })
 
 
 def save_pic(image, index, params, existing_caption=None):
@@ -180,7 +196,8 @@ def preprocess_work(
         anime_half_body_detect=False,
         anime_half_body_detect_ratio=0,
         box_to_top=False,
-
+        on_output_callback=None,
+        on_complete_callback=None,
 ):
     # loading model
     output.printJsonOutput(
@@ -244,6 +261,8 @@ def preprocess_work(
     params.process_caption_wd = process_caption_wd
     params.process_caption_clip = process_caption_clip
     params.process_caption_clip2 = process_caption_clip2
+    params.on_output_callback = on_output_callback
+    params.total = len(files)
 
     # pbar = tqdm.tqdm(files)
     if anime_face_detect:
@@ -350,6 +369,9 @@ def preprocess_work(
             img = images.resize_image(1, img, width, height)
             save_pic(img, index, params, existing_caption=existing_caption)
         index += 1
+        params.current_index = index
+    if on_complete_callback:
+        on_complete_callback(params.outputDetail)
     if output.detail_output:
         output.printJsonOutput("Done", vars=params.outputDetail, event="preprocess_done")
     else:

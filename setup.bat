@@ -11,7 +11,7 @@ echo { "event": "activate-venv" }
 call .\venv\Scripts\activate.bat
 :skip_venv
 echo { "event": "install-requirements" }
-%PYTHON% -m pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117 || (echo {"event":"install-failed"} & exit /b)
+%PYTHON% -m pip install torch==2.2.0 torchvision==0.17.0 torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu118 || (echo {"event":"install-failed"} & exit /b)
 %PYTHON% -m pip install --use-pep517 --upgrade -r requirements.txt || (echo {"event":"install-failed"} & exit /b)
 %PYTHON% -m pip install -U xformers || (echo {"event":"install-failed"} & exit /b)
 
